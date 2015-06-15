@@ -1,0 +1,25 @@
+Decl:   suppose Type (Var | Var is Value).                           btw, default = false.
+        suppose [Type].
+
+Type:   boolean
+        integer
+        string
+        
+Var:    String
+
+Comment:    btw, String.
+
+Task:   task Func_Name takes (Type Var (', '|' and '))* Type Var and gives Type: Body.
+
+Body:   
+
+Func_Name:  String
+
+ignore: Comment
+
+
+
+
+task Func_Name takes  and gives Type:                     btw, Type Var, Type Var and Type Var
+    .
+jklfjdk dsfd 

@@ -6,6 +6,7 @@ module Parse where
 import Debug.Trace
 import Data.List
 import FPPrac.Trees
+import Prelude
 
 
 -- Embedded language for alphabet: the first 10 clauses should not be removed, the last three can be replaced by your own.
@@ -22,12 +23,11 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Rep1  [Alphabet]              -- One or more repetitions
 
                 -- A few non-terminals as example; to be filled in for your own language
-                | Expr                          -- Expression
+                | Boolean                       -- Bool
+                | Integer                       -- Integer
+                | Character                     -- Char
                 | Idf                           -- Identifier
-                | Nmbr                          -- Number
-                | Op                            -- Operation symbol
-                | Bracket                       -- Brackets
-                | Etcetera
+
 
                 deriving (Eq,Show)
 
@@ -58,9 +58,13 @@ grammar :: Grammar
 
 grammar nt = case nt of
 
-        Nmbr    -> [[ num                                       ]]
+        Decl    -> [[ suppose, Type, idf, Opt [is Value]           ]]
 
-        Op      -> [[ op                                        ]]
+        Type    -> [[Boolean]
+                    ,[Integer]
+                    ,[Character]]
+        
+        Value   -> [[Symbol]]
 
         Expr    -> [[ lBracket, Expr, Op, Expr, rBracket        ]
                    ,[ idf                                       ]
@@ -76,6 +80,11 @@ idf       = SyntCat Idf
 op        = SyntCat Op
 
 prog      = Keyword "program"
+comment   = Keyword "btw,"
+suppose   = Keyword "suppose"
+is        = Keyword "is"
+task      = Keyword "task"
+takes     = Keyword "takes"
 while     = Keyword "while"
 enz       = Keyword "enzovoort"
 

@@ -9,7 +9,7 @@ Var:    String
 
 Comment:    btw, String.
 
-Task:   task Func_Name takes (Type Var (', '|' and '))* Type Var and gives Type: Body.
+Task:   task Func_Name takes (Type Var (', '|' and '))* Type Var and gives Type do: Body.
 
 Body:   
 

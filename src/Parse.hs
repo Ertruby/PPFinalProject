@@ -23,20 +23,34 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Rep1  [Alphabet]              -- One or more repetitions
 
                 -- A few non-terminals as example; to be filled in for your own language
-                | Boolean                       -- Bool
-                | Integer                       -- Integer
-                | Character                     -- Char
-                | TypeBool
-                | TypeInt
-                | TypeChar
-                | Idf                           -- Identifier
-                | Decl
-                | Type
-                | Value
+                | Program                       
+                | ProgBody                       
+                | Decl                     
+                | Assign
+                | When
+                | While
+                | Task                           
                 | Arg
                 | FuncName
-                | Task
-
+                | Body
+                | ProgLine
+                | Line
+                | MExpr
+                | Expr
+                | Op
+                | GreaterThan
+                | GreaterThanE
+                | SmallerThan
+                | SmallerThanE
+                | Type
+                | Idf
+                | Value
+                | Boolean
+                | TypeBool
+                | Integer
+                | TypeInt
+                | Character
+                | TypeChar
 
                 deriving (Eq,Show)
 
@@ -67,17 +81,57 @@ grammar :: Grammar
 
 grammar nt = case nt of
 
-        Decl    -> [[ suppose, Type, idf, is, Value, dot           ]]
+        Program -> [[ProgBody]]
+        
+        ProgBody -> [[Rep1 [ProgLine]]]
 
-        Type    -> [[ TypeBool]
-                   ,[ TypeInt]
-                   ,[ TypeChar]]
+        Decl    -> [[suppose, Opt [global], Type, idf, is, Value, dot]
+                    ,[suppose, Type, idf, dot]]
+                    
+        Assign  -> [[Idf, is, Alt [Value] [Expr]]]
+        
+        When    -> [[when, MExpr, doK, Body]]
+        
+        While   -> [[while, MExpr, doK, Body]]
                    
-        Task    -> [[task, FuncName, takes, Rep0[Arg], Type, idf, andK, gives, Type, after]]
+        Task    -> [[task, FuncName, takes, Rep0[Arg], Type, idf, andK, gives, Type, after, Body]]
+        
+        Arg     -> [[Type, idf, Alt [comma] [andK]]]
         
         FuncName -> [[funcName]]
         
-        Arg     -> [[Type, idf, Try [comma] [andK]]]
+        Body    -> [[Rep1 [Line]]]
+        
+        ProgLine -> [[Alt [Task] [Line]]]
+        
+        Line    -> [[Decl]
+                    ,[Assign]
+                    ,[When]
+                    ,[While]]
+        
+        MExpr   -> [[Expr, Alt [comma] [andK]]]
+        
+        Expr    -> [[Expr, Op, Expr]
+                    ,[Alt [Value] [Idf]]]
+                    
+        Op      -> [[equals]
+                    ,[GreaterThan]
+                    ,[GreaterThanE]
+                    ,[SmallerThan]
+                    ,[SmallerThanE]
+                    ,[plus]
+                    ,[minus]
+                    ,[times]
+                    ,[divides]]
+                    
+        GreaterThan -> [[Keyword "is", Keyword "greater", Keyword "than"]]
+        GreaterThanE -> [[Keyword "is", Keyword "greater", Keyword "than", Keyword "or", Keyword "equal", Keyword "to"]]
+        SmallerThan -> [[Keyword "is", Keyword "smaller", Keyword "than"]]
+        SmallerThanE -> [[Keyword "is", Keyword "smaller", Keyword "than", Keyword "or", Keyword "equal", Keyword "to"]]
+        
+        Type    -> [[TypeBool]
+                   ,[TypeInt]
+                   ,[TypeChar]]
         
         Idf     -> [[idf]]
                    
@@ -96,8 +150,6 @@ grammar nt = case nt of
         
 
 -- shorthand names can be handy, such as:
-lBracket  = Symbol "("
-rBracket  = Symbol ")"
 typeBool  = Keyword "boolean"
 typeInt   = Keyword "integer"
 typeChar  = Keyword "character"
@@ -111,10 +163,13 @@ funcName  = SyntCat FuncName
 suppose     = Keyword "suppose"
 after       = Keyword "after:"
 is          = Keyword "is"
+equals      = Keyword "equals"
+
 task        = Keyword "task"
+global      = Keyword "global"
 takes       = Keyword "takes"
 comma       = Keyword ","
-andK         = Keyword "and"
+andK        = Keyword "and"
 gives       = Keyword "gives"
 dot         = Keyword "."
 to          = Keyword "to"
@@ -253,7 +308,7 @@ tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","take
     (TypeBool,"boolean"), (Idf,"a") , (Keyword ",", ","),
     (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
     (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
-    (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:")]
+    (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:"), (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".")]
 
 
 -- test0 calculates the parse tree:

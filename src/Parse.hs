@@ -99,7 +99,7 @@ grammar nt = case nt of
         
         While   -> [[while, MExpr, doK, Body]]
                    
-        Task    -> [[task, FuncName, takes, Rep0[Arg], Type, idf, andK, gives, Type, after, Body]]
+        Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body]]
         
         Arg     -> [[Type, idf, Alt [comma] [andK]]]
         

@@ -26,7 +26,16 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Boolean                       -- Bool
                 | Integer                       -- Integer
                 | Character                     -- Char
+                | TypeBool
+                | TypeInt
+                | TypeChar
                 | Idf                           -- Identifier
+                | Decl
+                | Type
+                | Value
+                | Arg
+                | FuncName
+                | Task
 
 
                 deriving (Eq,Show)
@@ -58,35 +67,70 @@ grammar :: Grammar
 
 grammar nt = case nt of
 
-        Decl    -> [[ suppose, Type, idf, Opt [is Value]           ]]
+        Decl    -> [[ suppose, Type, idf, is, Value, dot           ]]
 
-        Type    -> [[Boolean]
-                    ,[Integer]
-                    ,[Character]]
+        Type    -> [[ TypeBool]
+                   ,[ TypeInt]
+                   ,[ TypeChar]]
+                   
+        Task    -> [[task, FuncName, takes, Rep0[Arg], Type, idf, andK, gives, Type, after]]
         
-        Value   -> [[Symbol]]
-
-        Expr    -> [[ lBracket, Expr, Op, Expr, rBracket        ]
-                   ,[ idf                                       ]
-                   ,[ Nmbr                                      ]]
-
+        FuncName -> [[funcName]]
+        
+        Arg     -> [[Type, idf, Try [comma] [andK]]]
+        
+        Idf     -> [[idf]]
+                   
+        Value   -> [[Boolean]
+                   ,[Integer]
+                   ,[Character]]
+                
+        Boolean -> [[bool]]
+        TypeBool -> [[typeBool]]
+        
+        Integer -> [[int]]
+        TypeInt -> [[typeInt]]
+        
+        Character -> [[char]]
+        TypeChar -> [[typeChar]]
+        
 
 -- shorthand names can be handy, such as:
 lBracket  = Symbol "("
 rBracket  = Symbol ")"
+typeBool  = Keyword "boolean"
+typeInt   = Keyword "integer"
+typeChar  = Keyword "character"
 
-num       = SyntCat Nmbr
+bool      = SyntCat Boolean
+int       = SyntCat Integer
+char      = SyntCat Character
 idf       = SyntCat Idf
-op        = SyntCat Op
+funcName  = SyntCat FuncName
 
-prog      = Keyword "program"
-comment   = Keyword "btw,"
-suppose   = Keyword "suppose"
-is        = Keyword "is"
-task      = Keyword "task"
-takes     = Keyword "takes"
-while     = Keyword "while"
-enz       = Keyword "enzovoort"
+suppose     = Keyword "suppose"
+after       = Keyword "after:"
+is          = Keyword "is"
+task        = Keyword "task"
+takes       = Keyword "takes"
+comma       = Keyword ","
+andK         = Keyword "and"
+gives       = Keyword "gives"
+dot         = Keyword "."
+to          = Keyword "to"
+while       = Keyword "while"
+isK         = Keyword "is"
+doK         = Keyword "do:"
+inc         = Keyword "increment"
+plus        = Keyword "plus"
+minus       = Keyword "minus"
+times       = Keyword "times"
+divides     = Keyword "divides"
+comment     = Keyword "btw,"
+when        = Keyword "when"
+otherwiseK  = Keyword "otherwise"
+nothing     = Keyword "nothing"
+give        = Keyword "give"
 
 
 -- ==========================================================================================================
@@ -201,14 +245,20 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- ==================================================
 -- Testing
 
--- Informal expression: (2+5)
+-- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = [ (Bracket,"(") , (Nmbr,"2") , (Op,"+") , (Nmbr,"5") , (Bracket,")") ]
+tokenlist = [ (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".") ]
+tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","takes") , 
+    (TypeBool,"boolean"), (Idf,"a") , (Keyword ",", ","),
+    (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
+    (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
+    (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:")]
 
 
 -- test0 calculates the parse tree:
-test0 = parse grammar Expr tokenlist
+test0 = parse grammar Decl tokenlist
+test1 = parse grammar Task tokenlist2
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.

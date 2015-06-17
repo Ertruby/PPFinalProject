@@ -7,6 +7,8 @@ import Debug.Trace
 import Data.List
 import FPPrac.Trees
 import Prelude
+import Data.Char
+import qualified Data.Text as TXT
 
 
 -- Embedded language for alphabet: the first 10 clauses should not be removed, the last three can be replaced by your own.
@@ -51,6 +53,9 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | TypeInt
                 | Character
                 | TypeChar
+                | TrueK
+                | FalseK
+                | Error
 
                 deriving (Eq,Show)
 
@@ -124,10 +129,10 @@ grammar nt = case nt of
                     ,[times]
                     ,[divides]]
                     
-        GreaterThan -> [[Keyword "is", Keyword "greater", Keyword "than"]]
-        GreaterThanE -> [[Keyword "is", Keyword "greater", Keyword "than", Keyword "or", Keyword "equal", Keyword "to"]]
-        SmallerThan -> [[Keyword "is", Keyword "smaller", Keyword "than"]]
-        SmallerThanE -> [[Keyword "is", Keyword "smaller", Keyword "than", Keyword "or", Keyword "equal", Keyword "to"]]
+        GreaterThan -> [[is, greater, than]]
+        GreaterThanE -> [[is, greater, than, orK, equal, to]]
+        SmallerThan -> [[is, smaller, than]]
+        SmallerThanE -> [[is, smaller, than, orK, equal, to]]
         
         Type    -> [[TypeBool]
                    ,[TypeInt]
@@ -139,7 +144,7 @@ grammar nt = case nt of
                    ,[Integer]
                    ,[Character]]
                 
-        Boolean -> [[bool]]
+        Boolean -> [[Alt [TrueK] [FalseK]]]
         TypeBool -> [[typeBool]]
         
         Integer -> [[int]]
@@ -186,6 +191,11 @@ when        = Keyword "when"
 otherwiseK  = Keyword "otherwise"
 nothing     = Keyword "nothing"
 give        = Keyword "give"
+greater     = Keyword "greater"
+orK          = Keyword "or"
+than        = Keyword "than"
+equal       = Keyword "equal"
+smaller     = Keyword "smaller"
 
 
 -- ==========================================================================================================
@@ -343,3 +353,52 @@ test11 = showRoseTree $ toRoseTree1 test0
 --
 -- Just a hint: use pattern matching on trees
 
+-- ========================================================
+-- tokenizer
+
+-- error ("Dear sir,\n We have noticed that you have made a mistake in your beloved code. You have used a word that we do not recognize, namely" ++ x ++ ". We kindly ask you to reconsider your code.\n Thanks in advance, we hope we can help you further next time.\n Good luck!")
+
+--data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
+
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do:", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after:", "greater", "or", "than", "smaller", "equals", "equal"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal]
+
+tok :: String -> [(Alphabet,String)]
+tok str = tokH (prepare str)
+
+tokH :: [String] -> [(Alphabet,String)]
+tokH [] = []
+tokH (x:xs) | isUpper (head x) = (FuncName, x) : tokH xs
+            | x == "true" = (TrueK, x)  : tokH xs
+            | x == "false" = (FalseK, x) : tokH xs
+            | not (False `elem` (map isDigit x)) = (Integer, x) : tokH xs
+            | head x == '\'' && head (reverse x) == '\'' && length x == 3 = (Character, x) : tokH xs
+            | a /= Error = (a,b) : tokH xs
+            | otherwise = (Idf, x) : tokH xs
+                where
+                    (a,b) = getToken x
+       
+getToken :: String -> (Alphabet,String)       
+getToken str = getTokenH keys keyTokens str
+getTokenH :: [String] -> [Alphabet] -> String -> (Alphabet,String)
+getTokenH [] [] s = (Error, "")
+getTokenH (x:xs) (y:ys) s | s == x = (y,x)
+                          | otherwise = getTokenH xs ys s
+prepare :: String -> [String]                          
+prepare str = strlist
+                where
+                    txt = TXT.pack str
+                    txt2 = fixdots txt
+                    strl = (map TXT.unpack (TXT.splitOn (TXT.pack " ") txt2))
+                    strlist = removeComments strl True
+                    
+fixdots :: TXT.Text -> TXT.Text
+fixdots txt = TXT.replace (TXT.pack ".") (TXT.pack " .") txt
+
+removeComments :: [String] -> Bool -> [String]
+removeComments [] b = []
+removeComments (x:xs) True | x == "btw," = removeComments xs False
+                            | x == "nothing" = removeComments xs True
+                            | otherwise = x : removeComments xs True
+removeComments (x:xs) False | x == "." = removeComments xs True
+                            | otherwise = removeComments xs False

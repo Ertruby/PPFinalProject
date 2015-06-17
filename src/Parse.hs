@@ -93,7 +93,7 @@ grammar nt = case nt of
         Decl    -> [[suppose, Opt [global], Type, idf, is, Value, dot]
                     ,[suppose, Type, idf, dot]]
                     
-        Assign  -> [[Idf, is, Alt [Value] [Expr]]]
+        Assign  -> [[Idf, is, Alt [Value] [Expr], dot]]
         
         When    -> [[when, MExpr, doK, Body]]
         
@@ -319,11 +319,16 @@ tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","take
     (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
     (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
     (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:"), (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".")]
-
+tokenlist3 = tok "task f takes boolean g, integer i and integer j and gives integer after:"
+    ++ "suppose integer b. btw, this is a comment."
+    ++ "suppose integer c."
+    ++ "5 to a."
+    ++ "10 to b."
+    ++ "a + b to c."
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Decl tokenlist
-test1 = parse grammar Task tokenlist2
+test1 = parse grammar Task tokenlist3
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.

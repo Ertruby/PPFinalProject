@@ -1,0 +1,29 @@
+suppose integer a.
+
+task f takes boolean g, integer i and integer j and gives integer after:
+    suppose integer b. btw, this is a comment.
+    suppose integer c.
+    5 to a.
+    10 to b.
+    a + b to c.
+    
+    suppose integer h.
+    false to h.
+    while h is btw, this is also a comment. false do:
+        increment b.
+        when (b is greater than 20 and 1 is 1) is true do:
+            h is true.
+            .
+        .
+    
+    when g is true do: btw, this is the 'if'.
+        a plus 1 to a.
+        a times b to a.
+        increment a.
+        .
+    otherwise do:
+        nothing.
+        .
+    give a.
+    
+suppose integer x.

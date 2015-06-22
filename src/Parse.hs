@@ -37,7 +37,6 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Body
                 | ProgLine
                 | Line
-                | MComp
                 | Expr
                 | ExprH
                 | Op
@@ -57,6 +56,8 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | TrueK
                 | FalseK
                 | Comp
+                | Comps
+                | CompH
                 | CompOp
                 | Incr
                 | Error
@@ -111,10 +112,10 @@ grammar nt = case nt of
                     
         Incr    -> [[inc, Idf, dot]]
         
-        When    -> [[when, Comp, doK, Body]
-                    ,[when, Comp, doK, Body, otherwiseK, doK, Body]]
+        When    -> [[when, Comps, doK, Body]
+                    ,[when, Comps, doK, Body, otherwiseK, doK, Body]]
                            
-        While   -> [[while, Comp, doK, Body]]
+        While   -> [[while, Comps, doK, Body]]
                    
         Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body, give, Alt [Value] [Idf], dot]]
         
@@ -123,15 +124,19 @@ grammar nt = case nt of
         FuncName -> [[funcName]]
         
         Body    -> [[semi, Rep0 [Line], stop, dot]]
-        
-        
-        
-        Comp    -> [[Expr, MComp]]
-        
-        MComp   -> [[CompOp, MComp, MComp]
-                    ,[CompOp, MComp]
+            
+        Comps   -> [[Comp, Alt[orK] [andK], Comps]
+                    ,[Comp]]
+            -- [Comp, CompOp, Comp], [Expr]
+        Comp    -> [[Expr, CompOp, Comp]
                     ,[Expr]]
-                    
+        
+        
+        -- Comp    -> [[Expr, CompH]]
+        
+        -- CompH   -> [[CompOp, Expr, CompH]
+                    -- ,[CompOp, Expr]]
+
         Expr    -> [[Value, ExprH]
                     ,[Value]
                     ,[Idf, ExprH]
@@ -146,8 +151,6 @@ grammar nt = case nt of
                     ,[divided, by]]
         
         CompOp  -> [[equals]
-                    ,[andK]
-                    ,[orK]
                     ,[is]
                     ,[GreaterThan]
                     ,[GreaterThanEq]
@@ -416,7 +419,6 @@ toAST :: ParseTree -> AST
 toAST (PLeaf (c,s)) = ASTLeaf s
 toAST (PNode Line [t]) = toAST t -- this should be skipped
 toAST (PNode ProgLine [t]) = toAST t
-toAST (PNode MComp ts) = toAST (ts!!0)
 toAST (PNode FalseK [t]) = toAST t
 toAST (PNode TrueK [t]) = toAST t
 toAST (PNode TypeInt ts) = ASTLeaf (show TypeInt) -- make leaf of this

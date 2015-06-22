@@ -86,9 +86,9 @@ grammar :: Grammar
 
 grammar nt = case nt of
 
-        Program -> [[ProgBody]]
+        Program -> [[prog, FuncName, ProgBody]]
         
-        ProgBody -> [[Rep1 [ProgLine]]]
+        ProgBody -> [[semi, Rep0 [ProgLine], stop, dot]]
         
         ProgLine -> [[Alt [Task] [Line]]]
         
@@ -112,7 +112,7 @@ grammar nt = case nt of
         
         FuncName -> [[funcName]]
         
-        Body    -> [[takes, Rep0 [Line], takes]]
+        Body    -> [[semi, Rep0 [Line], stop, dot]]
         
         MExpr   -> [[Expr, Alt [comma] [andK]]]
         
@@ -166,7 +166,7 @@ idf       = SyntCat Idf
 funcName  = SyntCat FuncName
 
 suppose     = Keyword "suppose"
-after       = Keyword "after:"
+after       = Keyword "after"
 is          = Keyword "is"
 equals      = Keyword "equals"
 
@@ -180,7 +180,7 @@ dot         = Keyword "."
 to          = Keyword "to"
 while       = Keyword "while"
 isK         = Keyword "is"
-doK         = Keyword "do:"
+doK         = Keyword "do"
 inc         = Keyword "increment"
 plus        = Keyword "plus"
 minus       = Keyword "minus"
@@ -316,13 +316,13 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = tok "takes suppose integer b. btw, this is a comment. takes"
+tokenlist = tok ": suppose integer b. btw, this is a comment. suppose integer b. stop."
 tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","takes") , 
     (TypeBool,"boolean"), (Idf,"a") , (Keyword ",", ","),
     (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
     (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
     (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:"), (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".")]
-tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment.")
+tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
     -- ++ "suppose integer c."
    -- ++ "5 to a."
    -- ++ "10 to b."
@@ -341,7 +341,7 @@ toRoseTree0 t = case t of
         PLeaf (c,s)     -> RoseNode "PLeaf" [RoseNode ("(" ++ show c ++ "," ++ s ++ ")") []]
         PNode nt ts     -> RoseNode "PNode" (RoseNode (show nt) [] : map toRoseTree0 ts)
 
-test10 = showRoseTree $ toRoseTree0 test0
+test10 = showRoseTree $ toRoseTree0 test1
 
 -- ---
 toRoseTree1 t = case t of
@@ -349,7 +349,7 @@ toRoseTree1 t = case t of
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
 
 
-test11 = showRoseTree $ toRoseTree1 test0
+test11 = showRoseTree $ toRoseTree1 test1
 
 
 -- ==================================================
@@ -367,15 +367,16 @@ test11 = showRoseTree $ toRoseTree1 test0
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do:", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after:", "greater", "or", "than", "smaller", "equals", "equal", "stop"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
 
 tokH :: [String] -> [(Alphabet,String)]
 tokH [] = []
-tokH (x:xs) | isUpper (head x) = (FuncName, x) : tokH xs
+tokH (x:xs) | x == "" = tokH xs
+            | isUpper (head x) = (FuncName, x) : tokH xs
             | x == "true" = (TrueK, x)  : tokH xs
             | x == "false" = (FalseK, x) : tokH xs
             | not (False `elem` (map isDigit x)) = (Integer, x) : tokH xs

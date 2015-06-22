@@ -186,16 +186,19 @@ plus        = Keyword "plus"
 minus       = Keyword "minus"
 times       = Keyword "times"
 divides     = Keyword "divides"
-comment     = Keyword "btw,"
+comment     = Keyword "btw"
 when        = Keyword "when"
 otherwiseK  = Keyword "otherwise"
 nothing     = Keyword "nothing"
 give        = Keyword "give"
 greater     = Keyword "greater"
-orK          = Keyword "or"
+orK         = Keyword "or"
 than        = Keyword "than"
 equal       = Keyword "equal"
 smaller     = Keyword "smaller"
+stop        = Keyword "stop"
+semi        = Keyword ":"
+prog        = Keyword "program"
 
 
 -- ==========================================================================================================
@@ -364,8 +367,8 @@ test11 = showRoseTree $ toRoseTree1 test0
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do:", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after:", "greater", "or", "than", "smaller", "equals", "equal"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do:", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after:", "greater", "or", "than", "smaller", "equals", "equal", "stop"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
@@ -397,7 +400,11 @@ prepare str = strlist
                     strlist = removeComments strl True
                     
 fixdots :: TXT.Text -> TXT.Text
-fixdots txt = TXT.replace (TXT.pack ".") (TXT.pack " .") (TXT.replace (TXT.pack ",") (TXT.pack " ,") txt)
+fixdots txt = c
+                where
+                    a = TXT.replace (TXT.pack ",") (TXT.pack " , ") txt
+                    b = TXT.replace (TXT.pack ".") (TXT.pack " . ") a
+                    c = TXT.replace (TXT.pack ":") (TXT.pack " : ") b
 
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []

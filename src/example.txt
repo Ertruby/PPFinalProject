@@ -1,3 +1,5 @@
+program test:
+
 suppose integer a.
 
 task f takes boolean g, integer i and integer j and gives integer after:
@@ -14,16 +16,18 @@ task f takes boolean g, integer i and integer j and gives integer after:
         when (b is greater than 20 and 1 is 1) is true do:
             h is true.
             .
-        .
+        stop.
     
     when g is true do: btw, this is the 'if'.
         a plus 1 to a.
         a times b to a.
         increment a.
-        .
+        stop.
     otherwise do:
         nothing.
-        .
+        stop.
     give a.
+    stop.
     
 suppose integer x.
+stop.

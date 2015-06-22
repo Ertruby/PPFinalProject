@@ -98,7 +98,7 @@ grammar nt = case nt of
                     ,[While]]
 
         Decl    -> [[suppose, Opt [global], Type, idf, is, Value, dot]
-                    ,[suppose, Type, idf, dot]]
+                    ,[suppose, Opt [global], Type, idf, dot]]
                     
         Assign  -> [[Idf, is, Alt [Value] [Expr], dot]]
         

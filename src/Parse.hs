@@ -408,19 +408,26 @@ data AST = ASTNode Alphabet [AST] | ASTLeaf String deriving (Show, Eq)
 toAST :: ParseTree -> AST
 toAST (PLeaf (c,s)) = ASTLeaf s
 toAST (PNode Line [t]) = toAST t -- this should be skipped
-toAST (PNode MComp [t]) = toAST t
+toAST (PNode ProgLine [t]) = toAST t
+toAST (PNode MComp ts) = toAST (ts!!0)
 toAST (PNode FalseK [t]) = toAST t
 toAST (PNode TrueK [t]) = toAST t
 toAST (PNode TypeInt ts) = ASTLeaf (show TypeInt) -- make leaf of this
 toAST (PNode TypeBool ts) = ASTLeaf (show TypeBool)
 toAST (PNode TypeChar ts) = ASTLeaf (show TypeChar)
 toAST (PNode GreaterThan ts) = ASTLeaf (show GreaterThan)
+toAST (PNode GreaterThanEq ts) = ASTLeaf (show GreaterThanEq)
+toAST (PNode SmallerThan ts) = ASTLeaf (show SmallerThan)
+toAST (PNode SmallerThanEq ts) = ASTLeaf (show SmallerThanEq)
 toAST (PNode Arg ts) = ASTNode Arg (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] -- this one doenst need its leafs
 toAST (PNode Task ts) = ASTNode Task (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
 toAST (PNode Body ts) = ASTNode Body (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
 toAST (PNode Decl ts) = ASTNode Decl (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
 toAST (PNode When ts) = ASTNode When (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+toAST (PNode Program ts) = ASTNode Program (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
 toAST (PNode Assign ts) = ASTNode Assign (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+toAST (PNode ProgBody ts) = ASTNode Assign (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+toAST (PNode While ts) = ASTNode Assign (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
 toAST (PNode nt ts) = ASTNode nt (map toAST ts)
 
 astToRose :: AST -> RoseTree

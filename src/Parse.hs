@@ -89,6 +89,13 @@ grammar nt = case nt of
         Program -> [[ProgBody]]
         
         ProgBody -> [[Rep1 [ProgLine]]]
+        
+        ProgLine -> [[Alt [Task] [Line]]]
+        
+        Line    -> [[Decl]
+                    ,[Assign]
+                    ,[When]
+                    ,[While]]
 
         Decl    -> [[suppose, Opt [global], Type, idf, is, Value, dot]
                     ,[suppose, Type, idf, dot]]
@@ -105,14 +112,7 @@ grammar nt = case nt of
         
         FuncName -> [[funcName]]
         
-        Body    -> [[Rep1 [Line]]]
-        
-        ProgLine -> [[Alt [Task] [Line]]]
-        
-        Line    -> [[Decl]
-                    ,[Assign]
-                    ,[When]
-                    ,[While]]
+        Body    -> [[takes, Rep0 [Line], takes]]
         
         MExpr   -> [[Expr, Alt [comma] [andK]]]
         
@@ -300,7 +300,7 @@ parserGen gr (nt:rule) (nt0,ts,(cat,str):tokens)
 parse :: Grammar -> Alphabet -> [Token] -> ParseTree
 
 parse gr s tokens       | ptrees /= []  = head ptrees
-                        | otherwise     = error "parse: parse error - somewhere :-) - add your own traceShows in parseGen"
+                        | otherwise     = error (show tokens)
         where
           ptrees = [ t  | r <- gr s
                         , (t,rem) <- parserGen gr r (s,[],tokens)
@@ -313,21 +313,20 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = [ (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".") ]
+tokenlist = tok "takes suppose integer b. btw, this is a comment. takes"
 tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","takes") , 
     (TypeBool,"boolean"), (Idf,"a") , (Keyword ",", ","),
     (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
     (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
     (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:"), (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".")]
-tokenlist3 = tok "task f takes boolean g, integer i and integer j and gives integer after:"
-    ++ "suppose integer b. btw, this is a comment."
-    ++ "suppose integer c."
-    ++ "5 to a."
-    ++ "10 to b."
-    ++ "a + b to c."
+tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment.")
+    -- ++ "suppose integer c."
+   -- ++ "5 to a."
+   -- ++ "10 to b."
+   -- ++ "a + b to c.")
 
 -- test0 calculates the parse tree:
-test0 = parse grammar Decl tokenlist
+test0 = parse grammar Body tokenlist
 test1 = parse grammar Task tokenlist3
 
 
@@ -398,11 +397,11 @@ prepare str = strlist
                     strlist = removeComments strl True
                     
 fixdots :: TXT.Text -> TXT.Text
-fixdots txt = TXT.replace (TXT.pack ".") (TXT.pack " .") txt
+fixdots txt = TXT.replace (TXT.pack ".") (TXT.pack " .") (TXT.replace (TXT.pack ",") (TXT.pack " ,") txt)
 
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []
-removeComments (x:xs) True | x == "btw," = removeComments xs False
+removeComments (x:xs) True | x == "btw" = removeComments xs False
                             | x == "nothing" = removeComments xs True
                             | otherwise = x : removeComments xs True
 removeComments (x:xs) False | x == "." = removeComments xs True

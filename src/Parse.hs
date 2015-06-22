@@ -37,8 +37,9 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Body
                 | ProgLine
                 | Line
-                | MExpr
+                | MComp
                 | Expr
+                | ExprH
                 | Op
                 | GreaterThan
                 | GreaterThanE
@@ -55,6 +56,8 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | TypeChar
                 | TrueK
                 | FalseK
+                | Comp
+                | CompOp
                 | Error
 
                 deriving (Eq,Show)
@@ -90,44 +93,59 @@ grammar nt = case nt of
         
         ProgBody -> [[semi, Rep0 [ProgLine], stop, dot]]
         
-        ProgLine -> [[Alt [Task] [Line]]]
+        ProgLine -> [[Task]
+                    ,[Line]]
         
         Line    -> [[Decl]
                     ,[Assign]
                     ,[When]
                     ,[While]]
 
-        Decl    -> [[suppose, Opt [global], Type, idf, is, Value, dot]
-                    ,[suppose, Opt [global], Type, idf, dot]]
+        Decl    -> [[suppose, Opt [global], Type, Idf, is, Value, dot]
+                    ,[suppose, Opt [global], Type, Idf, dot]]
                     
-        Assign  -> [[Idf, is, Alt [Value] [Expr], dot]]
+        Assign  -> [[Idf, is, Value, dot]
+                    ,[Idf, is, Expr, dot]
+                    ,[inc, Idf, dot]]
         
-        When    -> [[when, MExpr, doK, Body]]
-        
-        While   -> [[while, MExpr, doK, Body]]
+        When    -> [[when, MComp, Rep0 [MComp], doK, Body]
+                    ,[when, MComp, Rep0 [MComp], doK, Body, otherwiseK, doK, Body]]
+                           
+        While   -> [[while, MComp, Rep0 [MComp], doK, Body]]
                    
         Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body]]
         
-        Arg     -> [[Type, idf, Alt [comma] [andK]]]
+        Arg     -> [[Type, Idf, Alt [comma] [andK]]]
         
         FuncName -> [[funcName]]
         
         Body    -> [[semi, Rep0 [Line], stop, dot]]
         
-        MExpr   -> [[Expr, Alt [comma] [andK]]]
+        MComp   -> [[Comp, andK]
+                    ,[Comp, comma]
+                    ,[Comp]]
         
-        Expr    -> [[Expr, Op, Expr]
-                    ,[Alt [Value] [Idf]]]
+        Comp    -> [[Expr, CompOp, Expr]]
                     
-        Op      -> [[equals]
+        Expr    -> [[Value, ExprH]
+                    ,[Value]
+                    ,[Idf, ExprH]
+                    ,[Idf]]
+                    
+        ExprH   -> [[Op, Alt [Value] [Idf], ExprH]
+                    ,[Op, Alt [Value] [Idf]]]
+                    
+        Op      -> [[plus]
+                    ,[minus]
+                    ,[times]
+                    ,[divided, by]]
+        
+        CompOp  -> [[equals]
+                    ,[is]
                     ,[GreaterThan]
                     ,[GreaterThanE]
                     ,[SmallerThan]
-                    ,[SmallerThanE]
-                    ,[plus]
-                    ,[minus]
-                    ,[times]
-                    ,[divides]]
+                    ,[SmallerThanE]]
                     
         GreaterThan -> [[is, greater, than]]
         GreaterThanE -> [[is, greater, than, orK, equal, to]]
@@ -141,10 +159,13 @@ grammar nt = case nt of
         Idf     -> [[idf]]
                    
         Value   -> [[Boolean]
-                   ,[Integer]
-                   ,[Character]]
+                  -- ,[FalseK]
+                   ,[int]
+                   ,[char]]
                 
         Boolean -> [[Alt [TrueK] [FalseK]]]
+        TrueK   -> [[trueK]]
+        FalseK  -> [[falseK]]
         TypeBool -> [[typeBool]]
         
         Integer -> [[int]]
@@ -160,6 +181,8 @@ typeInt   = Keyword "integer"
 typeChar  = Keyword "character"
 
 bool      = SyntCat Boolean
+trueK     = SyntCat TrueK
+falseK    = SyntCat FalseK
 int       = SyntCat Integer
 char      = SyntCat Character
 idf       = SyntCat Idf
@@ -185,7 +208,8 @@ inc         = Keyword "increment"
 plus        = Keyword "plus"
 minus       = Keyword "minus"
 times       = Keyword "times"
-divides     = Keyword "divides"
+divided     = Keyword "divided"
+by          = Keyword "by"
 comment     = Keyword "btw"
 when        = Keyword "when"
 otherwiseK  = Keyword "otherwise"
@@ -327,10 +351,38 @@ tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives int
    -- ++ "5 to a."
    -- ++ "10 to b."
    -- ++ "a + b to c.")
+programma1 = tok ("program Test:"
+    ++ "suppose integer a."
+    ++"task F takes boolean g, integer i and integer j and gives integer after:"
+        ++"suppose integer b. btw, this is a comment."
+        ++"suppose integer c."
+        ++"a is 5."
+        ++"b is 10."
+        ++"c is a plus b."
+        ++"suppose integer h."
+        ++"h is false."
+        ++"while h is btw, this is also a comment. false do:"
+            ++"increment b."
+            ++"when b is greater than 20 and 1 equals 1 do:"
+                ++"h is true."
+                ++"stop."
+            ++"stop."
+        ++"when g is true do: btw, this is the 'if'."
+            ++"a is a plus 1."
+            ++"a is a times b."
+            ++"increment a."
+            ++"stop."
+        ++"otherwise do:"
+            ++"nothing "
+            ++"stop."
+        ++"stop."
+    ++"suppose integer x."
+    ++"stop.")
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Body tokenlist
 test1 = parse grammar Task tokenlist3
+test2 = parse grammar Program programma1
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
@@ -349,7 +401,7 @@ toRoseTree1 t = case t of
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
 
 
-test11 = showRoseTree $ toRoseTree1 test1
+test11 = showRoseTree $ toRoseTree1 test2
 
 
 -- ==================================================
@@ -367,8 +419,8 @@ test11 = showRoseTree $ toRoseTree1 test1
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divides", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divides, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)

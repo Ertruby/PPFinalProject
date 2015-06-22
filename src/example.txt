@@ -1,21 +1,21 @@
-program test:
+program Test:
 
 suppose integer a.
 
-task f takes boolean g, integer i and integer j and gives integer after:
+task F takes boolean g, integer i and integer j and gives integer after:
     suppose integer b. btw, this is a comment.
     suppose integer c.
-    5 to a.
-    10 to b.
-    a + b to c.
+    a is 5.
+    b is 10.
+    c is a + b.
     
     suppose integer h.
-    false to h.
+    h is false.
     while h is btw, this is also a comment. false do:
         increment b.
-        when (b is greater than 20 and 1 is 1) is true do:
+        when b is greater than 20 and 1 equals 1 do:
             h is true.
-            .
+            stop.
         stop.
     
     when g is true do: btw, this is the 'if'.
@@ -24,7 +24,7 @@ task f takes boolean g, integer i and integer j and gives integer after:
         increment a.
         stop.
     otherwise do:
-        nothing.
+        nothing
         stop.
     give a.
     stop.

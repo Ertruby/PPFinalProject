@@ -58,6 +58,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | FalseK
                 | Comp
                 | CompOp
+                | Incr
                 | Error
 
                 deriving (Eq,Show)
@@ -99,19 +100,21 @@ grammar nt = case nt of
         Line    -> [[Decl]
                     ,[Assign]
                     ,[When]
-                    ,[While]]
+                    ,[While]
+                    ,[Incr]]
 
         Decl    -> [[suppose, Opt [global], Type, Idf, is, Value, dot]
                     ,[suppose, Opt [global], Type, Idf, dot]]
                     
         Assign  -> [[Idf, is, Value, dot]
-                    ,[Idf, is, Expr, dot]
-                    ,[inc, Idf, dot]]
+                    ,[Idf, is, Expr, dot]]
+                    
+        Incr    -> [[inc, Idf, dot]]
         
-        When    -> [[when, MComp, Rep0 [MComp], doK, Body]
-                    ,[when, MComp, Rep0 [MComp], doK, Body, otherwiseK, doK, Body]]
+        When    -> [[when, Comp, doK, Body]
+                    ,[when, Comp, doK, Body, otherwiseK, doK, Body]]
                            
-        While   -> [[while, MComp, Rep0 [MComp], doK, Body]]
+        While   -> [[while, Comp, doK, Body]]
                    
         Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body, give, Alt [Value] [Idf], dot]]
         
@@ -121,11 +124,13 @@ grammar nt = case nt of
         
         Body    -> [[semi, Rep0 [Line], stop, dot]]
         
-        MComp   -> [[Comp, andK]
-                    ,[Comp, comma]
-                    ,[Comp]]
         
-        Comp    -> [[Expr, CompOp, Expr]]
+        
+        Comp    -> [[Expr, MComp]]
+        
+        MComp   -> [[CompOp, MComp, MComp]
+                    ,[CompOp, MComp]
+                    ,[Expr]]
                     
         Expr    -> [[Value, ExprH]
                     ,[Value]
@@ -141,6 +146,8 @@ grammar nt = case nt of
                     ,[divided, by]]
         
         CompOp  -> [[equals]
+                    ,[andK]
+                    ,[orK]
                     ,[is]
                     ,[GreaterThan]
                     ,[GreaterThanEq]

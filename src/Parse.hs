@@ -42,9 +42,9 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | ExprH
                 | Op
                 | GreaterThan
-                | GreaterThanE
+                | GreaterThanEq
                 | SmallerThan
-                | SmallerThanE
+                | SmallerThanEq
                 | Type
                 | Idf
                 | Value
@@ -113,7 +113,7 @@ grammar nt = case nt of
                            
         While   -> [[while, MComp, Rep0 [MComp], doK, Body]]
                    
-        Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body]]
+        Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body, give, Alt [Value] [Idf], dot]]
         
         Arg     -> [[Type, Idf, Alt [comma] [andK]]]
         
@@ -143,14 +143,14 @@ grammar nt = case nt of
         CompOp  -> [[equals]
                     ,[is]
                     ,[GreaterThan]
-                    ,[GreaterThanE]
+                    ,[GreaterThanEq]
                     ,[SmallerThan]
-                    ,[SmallerThanE]]
+                    ,[SmallerThanEq]]
                     
         GreaterThan -> [[is, greater, than]]
-        GreaterThanE -> [[is, greater, than, orK, equal, to]]
+        GreaterThanEq -> [[is, greater, than, orK, equal, to]]
         SmallerThan -> [[is, smaller, than]]
-        SmallerThanE -> [[is, smaller, than, orK, equal, to]]
+        SmallerThanEq -> [[is, smaller, than, orK, equal, to]]
         
         Type    -> [[TypeBool]
                    ,[TypeInt]
@@ -376,6 +376,7 @@ programma1 = tok ("program Test:"
             ++"nothing "
             ++"stop."
         ++"stop."
+        ++"give a."
     ++"suppose integer x."
     ++"stop.")
 
@@ -393,13 +394,12 @@ toRoseTree0 t = case t of
         PLeaf (c,s)     -> RoseNode "PLeaf" [RoseNode ("(" ++ show c ++ "," ++ s ++ ")") []]
         PNode nt ts     -> RoseNode "PNode" (RoseNode (show nt) [] : map toRoseTree0 ts)
 
-test10 = showRoseTree $ toRoseTree0 test1
+test10 = showRoseTree $ toRoseTree0 test2
 
 -- ---
 toRoseTree1 t = case t of
         PLeaf (c,s)     -> RoseNode (show c) [RoseNode s []]
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
-
 
 test11 = showRoseTree $ toRoseTree1 test2
 

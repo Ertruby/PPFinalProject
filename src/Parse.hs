@@ -38,7 +38,6 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | ProgLine
                 | Line
                 | Expr
-                | ExprH
                 | Op
                 | GreaterThan
                 | GreaterThanEq
@@ -57,7 +56,6 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | FalseK
                 | Comp
                 | Comps
-                | CompH
                 | CompOp
                 | Incr
                 | Error
@@ -127,23 +125,25 @@ grammar nt = case nt of
             
         Comps   -> [[Comp, Alt[orK] [andK], Comps]
                     ,[Comp]]
-            -- [Comp, CompOp, Comp], [Expr]
+
         Comp    -> [[Expr, CompOp, Comp]
                     ,[Expr]]
-        
         
         -- Comp    -> [[Expr, CompH]]
         
         -- CompH   -> [[CompOp, Expr, CompH]
                     -- ,[CompOp, Expr]]
-
-        Expr    -> [[Value, ExprH]
-                    ,[Value]
-                    ,[Idf, ExprH]
-                    ,[Idf]]
                     
-        ExprH   -> [[Op, Alt [Value] [Idf], ExprH]
-                    ,[Op, Alt [Value] [Idf]]]
+        Expr   -> [[Alt [Value] [Idf], Op, Expr]
+                    ,[Alt [Value] [Idf]]]
+
+        -- Expr    -> [[Value, ExprH]
+                    -- ,[Value]
+                    -- ,[Idf, ExprH]
+                    -- ,[Idf]]
+                    
+        -- ExprH   -> [[Op, Alt [Value] [Idf], ExprH]
+                    -- ,[Op, Alt [Value] [Idf]]]
                     
         Op      -> [[plus]
                     ,[minus]
@@ -351,11 +351,7 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 
 -- Corresponding tokenlist:
 tokenlist = tok ": suppose integer b. btw, this is a comment. suppose integer b. stop."
-tokenlist2 = [ (Keyword "task","task") , (FuncName,"f") , (Keyword "takes","takes") , 
-    (TypeBool,"boolean"), (Idf,"a") , (Keyword ",", ","),
-    (TypeInt,"integer"), (Idf,"b"), (Keyword "and","and"),
-    (TypeChar,"character"), (Idf,"c"), (Keyword "and","and"), 
-    (Keyword "gives","gives"), (TypeInt,"integer"), (Keyword "after:","after:"), (Keyword "suppose","suppose") , (TypeBool,"boolean") , (Idf,"a") , (Keyword "is","is") , (Boolean,"false"), (Keyword ".",".")]
+tokenlist2 = tok ("4 plus 5 times 6")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
     -- ++ "suppose integer c."
    -- ++ "5 to a."
@@ -392,8 +388,9 @@ programma1 = tok ("program Test:"
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Body tokenlist
-test1 = parse grammar Task tokenlist3
+test1 = parse grammar Expr tokenlist2
 test2 = parse grammar Program programma1
+test3 = parse grammar Comps (tok "a or b or 1 equals 1 and c")
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
@@ -404,14 +401,14 @@ toRoseTree0 t = case t of
         PLeaf (c,s)     -> RoseNode "PLeaf" [RoseNode ("(" ++ show c ++ "," ++ s ++ ")") []]
         PNode nt ts     -> RoseNode "PNode" (RoseNode (show nt) [] : map toRoseTree0 ts)
 
-test10 = showRoseTree $ toRoseTree0 test2
+test10 = showRoseTree $ toRoseTree0 test1
 
 -- ---
 toRoseTree1 t = case t of
         PLeaf (c,s)     -> RoseNode (show c) [RoseNode s []]
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
 
-test11 = showRoseTree $ toRoseTree1 test2
+test11 = showRoseTree $ toRoseTree1 test3
 
 data AST = ASTNode Alphabet [AST] | ASTLeaf String deriving (Show, Eq)
 

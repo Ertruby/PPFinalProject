@@ -363,7 +363,8 @@ programma1 = tok ("program Test:"
         ++"a is 5."
         ++"b is 10."
         ++"c is a plus b."
-        ++"suppose [integer] h is [1,2,3]."
+        ++"a is false."
+        ++"g is false."
         ++"h is false."
         ++"while h is btw, this is also a comment. false do:"
             ++"increment b."
@@ -371,7 +372,7 @@ programma1 = tok ("program Test:"
                 ++"h is true."
                 ++"stop."
             ++"stop."
-        ++"when g is [1,2,3] do: btw, this is the 'if'."
+        ++"when g equals false do: btw, this is the 'if'."
             ++"a is a plus 1."
             ++"a is a times b."
             ++"increment a."
@@ -451,27 +452,56 @@ isPNode x = False
 test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
--- type checking
--- typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
--- typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
+test13 = typeCheckBody [toAST test2] []
+-- -- type checking
+typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
+typeCheck (ASTLeaf s) varList = True
+typeCheck (ASTNode Body ts) varList = typeCheckBody ts varList 
+typeCheck (ASTNode nt ts) varList = typeCheckBody ts varList --just push trough
 
--- typeCheckBody :: [AST] -> [(String, String)] -> Bool
--- typeCheckBody [] _ = True
--- typeCheckBody (t@(ASTNode Decl kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
--- typeCheckBody (t@(ASTNode Assign kids):ts) varList | length (union (makeTuplesAssign t) varlist) == length varlist = typeCheckBody ts varList
-                                                    -- | otherwise = error "Dear sir, \n You have made a mistake in your typing while assigning the variable HERMAN"
--- typeCheckBody (t:ts) varList = typeCheckBody ts varList
+typeCheckBody :: [AST] -> [(String, String)] -> Bool
+typeCheckBody [] _ = True
+typeCheckBody (t@(ASTNode Decl [_, _]):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+--typeCheckBody (t@(ASTNode Decl [_, _, e]):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+typeCheckBody (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList | expected == actual = typeCheckBody ts varList
+                                                                                | otherwise = error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." )
+                                                                                     where 
+                                                                                        expected = getType varList var
+                                                                                        actual = getAndCheckExpr varList expr
+typeCheckBody (t@(ASTNode Program kids):ts) varList = typeCheckBody kids varList
+typeCheckBody (t@(ASTNode ProgBody kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
+typeCheckBody (t@(ASTNode Task kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
+typeCheckBody (t@(ASTNode Body kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
+typeCheckBody (t@(ASTNode While kids):ts) varList = True
+typeCheckBody (t@(ASTNode When kids):ts) varList = True
+typeCheckBody (t:ts) varList = typeCheckBody ts varList
 
--- makeTuplesAssign (ASTNode Assign [ASTNode Idf [ASTLeaf nameStr], exprNode]) = 
+getAndCheckExpr :: [(String, String)] -> AST -> String
+getAndCheckExpr varlist (ASTNode Idf [ASTLeaf var]) = getType varlist var
+getAndCheckExpr varlist (ASTNode Value [ASTNode t kids]) | show t == "Boolean" = "TypeBool"
+                                                         | show t == "Integer" = "TypeInt"
+                                                         | otherwise = error "type not recognized at getAndCheckExpr: " ++ show t
+getAndCheckExpr varlist (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) | isBoolOp && leftT == rightT && leftT == "TypeBool" = "TypeBool"
+                                                                               | isIntOp && leftT == rightT && leftT == "TypeInt" = "TypeInt"
+                                                                               | isBoolOp = error  (show op) ++ " takes a boolean on each side."
+                                                                               | isIntOp = error  (show op) ++ " takes a integer on each side."
+                                                                               | otherwise = error "unknown operator"
+                                                where
+                                                    leftT = getAndCheckExpr varlist left
+                                                    rightT = getAndCheckExpr varlist right
+                                                    isBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq", "equals", "and", "or"] 
+                                                    isIntOp = op `elem` ["plus", "minus", "times" ]
+getAndCheckExpr varlist (ASTNode Expr [x]) = getAndCheckExpr varlist x
+getAndCheckExpr _ n = error (show n)
 
--- makeTupleDecl :: AST -> (String, String)
--- makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
--- makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr], exprNode]) = r
-                                                                                                -- where 
-                                                                                                    -- a = getExprType exprNode == typeStr
-                                                                                                    -- if a then r = (nameStr, typeStr)
-                                                                                                    -- else r = Error "Assigned wrong type at declaration of var HERMAN"
--- getExprType :: AST -> String
+getType :: [(String,String)] -> String -> String
+getType [] varname = error "Variable " ++ varname ++ " not in scope"
+getType ((n,t):xs) varname | n == varname = t 
+                            | otherwise = getType xs varname
+
+makeTupleDecl :: AST -> (String, String)
+makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+--getExprType :: AST -> String
 
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.

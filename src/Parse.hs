@@ -38,6 +38,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | ProgLine
                 | Line
                 | Expr
+                | ExprH
                 | Op
                 | GreaterThan
                 | GreaterThanEq
@@ -102,7 +103,7 @@ grammar nt = case nt of
                     ,[While]
                     ,[Incr]]
 
-        Decl    -> [[suppose, Opt [global], Type, Idf, is, Value, dot]
+        Decl    -> [[suppose, Opt [global], Type, Idf, is, Expr, dot]
                     ,[suppose, Opt [global], Type, Idf, dot]]
                     
         Assign  -> [[Idf, is, Value, dot]
@@ -124,6 +125,8 @@ grammar nt = case nt of
         Body    -> [[semi, Rep0 [Line], stop, dot]]
             
         Comps   -> [[Comp, Alt[orK] [andK], Comps]
+                    ,[lPar, Comps, rPar, Alt[orK] [andK], Comps]
+                    ,[lPar, Comps, rPar]
                     ,[Comp]]
 
         Comp    -> [[Expr, CompOp, Comp]
@@ -134,8 +137,12 @@ grammar nt = case nt of
         -- CompH   -> [[CompOp, Expr, CompH]
                     -- ,[CompOp, Expr]]
                     
-        Expr   -> [[Alt [Value] [Idf], Op, Expr]
+        Expr    -> [[Alt [Value] [Idf], Op, Expr]
+                    ,[lPar, Expr, rPar, Op, Expr]
+                    ,[lPar, Expr, rPar]
                     ,[Alt [Value] [Idf]]]
+                    
+        -- ExprH   -> [[Alt [Value] [Idf]]]
 
         -- Expr    -> [[Value, ExprH]
                     -- ,[Value]
@@ -169,7 +176,6 @@ grammar nt = case nt of
         Idf     -> [[idf]]
                    
         Value   -> [[Boolean]
-                  -- ,[FalseK]
                    ,[int]
                    ,[char]]
                 
@@ -186,17 +192,19 @@ grammar nt = case nt of
         
 
 -- shorthand names can be handy, such as:
-typeBool  = Keyword "boolean"
-typeInt   = Keyword "integer"
-typeChar  = Keyword "character"
+typeBool    = Keyword "boolean"
+typeInt     = Keyword "integer"
+typeChar    = Keyword "character"
+lPar        = Symbol "("
+rPar        = Symbol ")"
 
-bool      = SyntCat Boolean
-trueK     = SyntCat TrueK
-falseK    = SyntCat FalseK
-int       = SyntCat Integer
-char      = SyntCat Character
-idf       = SyntCat Idf
-funcName  = SyntCat FuncName
+bool        = SyntCat Boolean
+trueK       = SyntCat TrueK
+falseK      = SyntCat FalseK
+int         = SyntCat Integer
+char        = SyntCat Character
+idf         = SyntCat Idf
+funcName    = SyntCat FuncName
 
 suppose     = Keyword "suppose"
 after       = Keyword "after"
@@ -351,7 +359,7 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 
 -- Corresponding tokenlist:
 tokenlist = tok ": suppose integer b. btw, this is a comment. suppose integer b. stop."
-tokenlist2 = tok ("4 plus 5 times 6")
+tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
     -- ++ "suppose integer c."
    -- ++ "5 to a."
@@ -388,9 +396,9 @@ programma1 = tok ("program Test:"
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Body tokenlist
-test1 = parse grammar Expr tokenlist2
+test1 = parse grammar Comps tokenlist2
 test2 = parse grammar Program programma1
-test3 = parse grammar Comps (tok "a or b or 1 equals 1 and c")
+-- test3 = parse grammar Comps (tok "(5")
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
@@ -408,7 +416,7 @@ toRoseTree1 t = case t of
         PLeaf (c,s)     -> RoseNode (show c) [RoseNode s []]
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
 
-test11 = showRoseTree $ toRoseTree1 test3
+test11 = showRoseTree $ toRoseTree1 test1
 
 -- ============================================
 -- building the AST
@@ -453,7 +461,7 @@ test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
 -- type checking
-typeCheck :: AST -> [(String, Type)] -> Bool -- list of tuples (varName, varType), must be empty on call
+typeCheck :: AST -> [(String, Alphabet)] -> Bool -- list of tuples (varName, varType), must be empty on call
 typeCheck (ASTNode nt ts) varList = True
 
 -- ==================================================
@@ -471,8 +479,8 @@ typeCheck (ASTNode nt ts) varList = True
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program", "(", ")"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog, lPar, rPar]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
@@ -505,11 +513,13 @@ prepare str = strlist
                     strlist = removeComments strl True
                     
 fixdots :: TXT.Text -> TXT.Text
-fixdots txt = c
+fixdots txt = e
                 where
                     a = TXT.replace (TXT.pack ",") (TXT.pack " , ") txt
                     b = TXT.replace (TXT.pack ".") (TXT.pack " . ") a
                     c = TXT.replace (TXT.pack ":") (TXT.pack " : ") b
+                    d = TXT.replace (TXT.pack "(") (TXT.pack " ( ") c
+                    e = TXT.replace (TXT.pack ")") (TXT.pack " ) ") d
 
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []

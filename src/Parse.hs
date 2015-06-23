@@ -110,8 +110,7 @@ grammar nt = case nt of
         Decl    -> [[suppose, Opt [global], Type, Idf, is, Expr, dot]
                     ,[suppose, Opt [global], Type, Idf, dot]]
                     
-        Assign  -> [[Idf, is, Value, dot]
-                    ,[Idf, is, Expr, dot]]
+        Assign  -> [[Idf, is, Expr, dot]]
                     
         Incr    -> [[inc, Idf, dot]]
         
@@ -480,17 +479,26 @@ test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
 -- type checking
-typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
-typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
+-- typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
+-- typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
 
-typeCheckBody :: [AST] -> [(String, String)] -> Bool
-typeCheckBody [] _ = True
-typeCheckBody (t@(ASTNode Decl kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
-typeCheckBody (t@(ASTNode Assign kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+-- typeCheckBody :: [AST] -> [(String, String)] -> Bool
+-- typeCheckBody [] _ = True
+-- typeCheckBody (t@(ASTNode Decl kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+-- typeCheckBody (t@(ASTNode Assign kids):ts) varList | length (union (makeTuplesAssign t) varlist) == length varlist = typeCheckBody ts varList
+                                                    -- | otherwise = error "Dear sir, \n You have made a mistake in your typing while assigning the variable HERMAN"
+-- typeCheckBody (t:ts) varList = typeCheckBody ts varList
 
-makeTupleDecl :: AST -> (String, String)
-makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+-- makeTuplesAssign (ASTNode Assign [ASTNode Idf [ASTLeaf nameStr], exprNode]) = 
 
+-- makeTupleDecl :: AST -> (String, String)
+-- makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+-- makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr], exprNode]) = r
+                                                                                                -- where 
+                                                                                                    -- a = getExprType exprNode == typeStr
+                                                                                                    -- if a then r = (nameStr, typeStr)
+                                                                                                    -- else r = Error "Assigned wrong type at declaration of var HERMAN"
+-- getExprType :: AST -> String
 
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.

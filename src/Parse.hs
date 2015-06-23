@@ -364,6 +364,7 @@ programma1 = tok ("program Test:"
         ++"suppose integer c."
         ++"a is 5."
         ++"b is 10."
+        ++"increment b."
         ++"c is a plus b."
         ++"suppose integer h."
         ++"h is false."
@@ -453,8 +454,11 @@ test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
 -- type checking
-typeCheck :: AST -> [(String, Type)] -> Bool -- list of tuples (varName, varType), must be empty on call
-typeCheck (ASTNode nt ts) varList = True
+-- typeCheck :: AST -> [(String, Alphabet)] -> Bool -- list of tuples (varName, varType), must be empty on call
+-- typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
+
+-- typeCheckBody :: [AST] -> [(String, Alphabet)] -> Bool
+-- typeCheckBody (t:ts) varList = True
 
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.

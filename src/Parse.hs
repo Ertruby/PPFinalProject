@@ -58,9 +58,6 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | TypeChar
                 | TrueK
                 | FalseK
-                | Comp
-                | Comps
-                | CompOp
                 | Incr
                 | VIA
                 | Error
@@ -114,10 +111,10 @@ grammar nt = case nt of
                     
         Incr    -> [[inc, Idf, dot]]
         
-        When    -> [[when, Comps, doK, Body]
-                    ,[when, Comps, doK, Body, otherwiseK, doK, Body]]
+        When    -> [[when, Expr, doK, Body]
+                    ,[when, Expr, doK, Body, otherwiseK, doK, Body]]
                            
-        While   -> [[while, Comps, doK, Body]]
+        While   -> [[while, Expr, doK, Body]]
                    
         Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body, give, Alt [Value] [Idf], dot]]
         
@@ -126,19 +123,6 @@ grammar nt = case nt of
         FuncName -> [[funcName]]
         
         Body    -> [[semi, Rep0 [Line], stop, dot]]
-            
-        Comps   -> [[Comp, Alt[orK] [andK], Comps]
-                    ,[lPar, Comps, rPar, Alt[orK] [andK], Comps]
-                    ,[lPar, Comps, rPar]
-                    ,[Comp]]
-
-        Comp    -> [[Expr, CompOp, Comp]
-                    ,[Expr]]
-        
-        -- Comp    -> [[Expr, CompH]]
-        
-        -- CompH   -> [[CompOp, Expr, CompH]
-                    -- ,[CompOp, Expr]]
                     
         Expr    -> [[VIA, Op, Expr]
                     ,[lPar, Expr, rPar, Op, Expr]
@@ -149,27 +133,18 @@ grammar nt = case nt of
                     ,[Idf]
                     ,[Array]]
                     
-        -- ExprH   -> [[Alt [Value] [Idf]]]
-
-        -- Expr    -> [[Value, ExprH]
-                    -- ,[Value]
-                    -- ,[Idf, ExprH]
-                    -- ,[Idf]]
-                    
-        -- ExprH   -> [[Op, Alt [Value] [Idf], ExprH]
-                    -- ,[Op, Alt [Value] [Idf]]]
-                    
         Op      -> [[plus]
                     ,[minus]
                     ,[times]
-                    ,[divided, by]]
-        
-        CompOp  -> [[equals]
+                    ,[divided, by]
+                    ,[equals]
                     ,[is]
                     ,[GreaterThan]
                     ,[GreaterThanEq]
                     ,[SmallerThan]
-                    ,[SmallerThanEq]]
+                    ,[SmallerThanEq]
+                    ,[andK]
+                    ,[orK]]
                     
         GreaterThan -> [[is, greater, than]]
         GreaterThanEq -> [[is, greater, than, orK, equal, to]]
@@ -411,10 +386,8 @@ programma1 = tok ("program Test:"
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Decl tokenlist
-test1 = parse grammar Comps tokenlist2
+test1 = parse grammar Expr tokenlist2
 test2 = parse grammar Program programma1
--- test3 = parse grammar Comps (tok "(5")
-
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
 -- First open standard_webpage.html

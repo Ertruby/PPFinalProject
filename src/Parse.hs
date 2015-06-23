@@ -47,6 +47,9 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Type
                 | Idf
                 | Value
+                | Array
+                | ArrayVal
+                | TypeArray
                 | Boolean
                 | TypeBool
                 | Integer
@@ -59,6 +62,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Comps
                 | CompOp
                 | Incr
+                | VIA
                 | Error
 
                 deriving (Eq,Show)
@@ -137,10 +141,14 @@ grammar nt = case nt of
         -- CompH   -> [[CompOp, Expr, CompH]
                     -- ,[CompOp, Expr]]
                     
-        Expr    -> [[Alt [Value] [Idf], Op, Expr]
+        Expr    -> [[VIA, Op, Expr]
                     ,[lPar, Expr, rPar, Op, Expr]
                     ,[lPar, Expr, rPar]
-                    ,[Alt [Value] [Idf]]]
+                    ,[VIA]]
+                    
+        VIA     -> [[Value]
+                    ,[Idf]
+                    ,[Array]]
                     
         -- ExprH   -> [[Alt [Value] [Idf]]]
 
@@ -171,13 +179,19 @@ grammar nt = case nt of
         
         Type    -> [[TypeBool]
                    ,[TypeInt]
-                   ,[TypeChar]]
+                   ,[TypeChar]
+                   ,[TypeArray]]
         
         Idf     -> [[idf]]
                    
         Value   -> [[Boolean]
                    ,[int]
                    ,[char]]
+                   
+        Array   -> [[lBracket, Rep0 [ArrayVal], rBracket]]
+        ArrayVal    -> [[Value, comma]
+                        ,[Value]]
+        TypeArray   -> [[lBracket, Type, rBracket]]
                 
         Boolean -> [[Alt [TrueK] [FalseK]]]
         TrueK   -> [[trueK]]
@@ -197,6 +211,8 @@ typeInt     = Keyword "integer"
 typeChar    = Keyword "character"
 lPar        = Symbol "("
 rPar        = Symbol ")"
+lBracket    = Symbol "["
+rBracket    = Symbol "]"
 
 bool        = SyntCat Boolean
 trueK       = SyntCat TrueK
@@ -358,7 +374,7 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = tok ": suppose integer b. btw, this is a comment. suppose integer b. stop."
+tokenlist = tok "suppose [integer] b is [1,2,3]."
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
     -- ++ "suppose integer c."
@@ -373,7 +389,7 @@ programma1 = tok ("program Test:"
         ++"a is 5."
         ++"b is 10."
         ++"c is a plus b."
-        ++"suppose integer h."
+        ++"suppose [integer] h is [1,2,3]."
         ++"h is false."
         ++"while h is btw, this is also a comment. false do:"
             ++"increment b."
@@ -381,7 +397,7 @@ programma1 = tok ("program Test:"
                 ++"h is true."
                 ++"stop."
             ++"stop."
-        ++"when g is true do: btw, this is the 'if'."
+        ++"when g is [1,2,3] do: btw, this is the 'if'."
             ++"a is a plus 1."
             ++"a is a times b."
             ++"increment a."
@@ -395,7 +411,7 @@ programma1 = tok ("program Test:"
     ++"stop.")
 
 -- test0 calculates the parse tree:
-test0 = parse grammar Body tokenlist
+test0 = parse grammar Decl tokenlist
 test1 = parse grammar Comps tokenlist2
 test2 = parse grammar Program programma1
 -- test3 = parse grammar Comps (tok "(5")
@@ -479,8 +495,8 @@ typeCheck (ASTNode nt ts) varList = True
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program", "(", ")"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog, lPar, rPar]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program", "(", ")", "[", "]"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog, lPar, rPar, lBracket, rBracket]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
@@ -513,13 +529,15 @@ prepare str = strlist
                     strlist = removeComments strl True
                     
 fixdots :: TXT.Text -> TXT.Text
-fixdots txt = e
+fixdots txt = g
                 where
                     a = TXT.replace (TXT.pack ",") (TXT.pack " , ") txt
                     b = TXT.replace (TXT.pack ".") (TXT.pack " . ") a
                     c = TXT.replace (TXT.pack ":") (TXT.pack " : ") b
                     d = TXT.replace (TXT.pack "(") (TXT.pack " ( ") c
                     e = TXT.replace (TXT.pack ")") (TXT.pack " ) ") d
+                    f = TXT.replace (TXT.pack "[") (TXT.pack " [ ") e
+                    g = TXT.replace (TXT.pack "]") (TXT.pack " ] ") f
 
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []

@@ -38,6 +38,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | ProgLine
                 | Line
                 | Expr
+                | ExprH
                 | Op
                 | GreaterThan
                 | GreaterThanEq
@@ -46,6 +47,9 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Type
                 | Idf
                 | Value
+                | Array
+                | ArrayVal
+                | TypeArray
                 | Boolean
                 | TypeBool
                 | Integer
@@ -58,6 +62,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Comps
                 | CompOp
                 | Incr
+                | VIA
                 | Error
 
                 deriving (Eq,Show)
@@ -102,7 +107,7 @@ grammar nt = case nt of
                     ,[While]
                     ,[Incr]]
 
-        Decl    -> [[suppose, Opt [global], Type, Idf, is, Value, dot]
+        Decl    -> [[suppose, Opt [global], Type, Idf, is, Expr, dot]
                     ,[suppose, Opt [global], Type, Idf, dot]]
                     
         Assign  -> [[Idf, is, Value, dot]
@@ -124,6 +129,8 @@ grammar nt = case nt of
         Body    -> [[semi, Rep0 [Line], stop, dot]]
             
         Comps   -> [[Comp, Alt[orK] [andK], Comps]
+                    ,[lPar, Comps, rPar, Alt[orK] [andK], Comps]
+                    ,[lPar, Comps, rPar]
                     ,[Comp]]
 
         Comp    -> [[Expr, CompOp, Comp]
@@ -134,8 +141,16 @@ grammar nt = case nt of
         -- CompH   -> [[CompOp, Expr, CompH]
                     -- ,[CompOp, Expr]]
                     
-        Expr   -> [[Alt [Value] [Idf], Op, Expr]
-                    ,[Alt [Value] [Idf]]]
+        Expr    -> [[VIA, Op, Expr]
+                    ,[lPar, Expr, rPar, Op, Expr]
+                    ,[lPar, Expr, rPar]
+                    ,[VIA]]
+                    
+        VIA     -> [[Value]
+                    ,[Idf]
+                    ,[Array]]
+                    
+        -- ExprH   -> [[Alt [Value] [Idf]]]
 
         -- Expr    -> [[Value, ExprH]
                     -- ,[Value]
@@ -164,14 +179,19 @@ grammar nt = case nt of
         
         Type    -> [[TypeBool]
                    ,[TypeInt]
-                   ,[TypeChar]]
+                   ,[TypeChar]
+                   ,[TypeArray]]
         
         Idf     -> [[idf]]
                    
         Value   -> [[Boolean]
-                  -- ,[FalseK]
-                   ,[int]
-                   ,[char]]
+                   ,[Integer]
+                   ,[Character]]
+                   
+        Array   -> [[lBracket, Rep0 [ArrayVal], rBracket]]
+        ArrayVal    -> [[Value, comma]
+                        ,[Value]]
+        TypeArray   -> [[lBracket, Type, rBracket]]
                 
         Boolean -> [[Alt [TrueK] [FalseK]]]
         TrueK   -> [[trueK]]
@@ -186,17 +206,21 @@ grammar nt = case nt of
         
 
 -- shorthand names can be handy, such as:
-typeBool  = Keyword "boolean"
-typeInt   = Keyword "integer"
-typeChar  = Keyword "character"
+typeBool    = Keyword "boolean"
+typeInt     = Keyword "integer"
+typeChar    = Keyword "character"
+lPar        = Symbol "("
+rPar        = Symbol ")"
+lBracket    = Symbol "["
+rBracket    = Symbol "]"
 
-bool      = SyntCat Boolean
-trueK     = SyntCat TrueK
-falseK    = SyntCat FalseK
-int       = SyntCat Integer
-char      = SyntCat Character
-idf       = SyntCat Idf
-funcName  = SyntCat FuncName
+bool        = SyntCat Boolean
+trueK       = SyntCat TrueK
+falseK      = SyntCat FalseK
+int         = SyntCat Integer
+char        = SyntCat Character
+idf         = SyntCat Idf
+funcName    = SyntCat FuncName
 
 suppose     = Keyword "suppose"
 after       = Keyword "after"
@@ -350,8 +374,8 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = tok ": suppose integer b. btw, this is a comment. suppose integer b. stop."
-tokenlist2 = tok ("4 plus 5 times 6")
+tokenlist = tok "suppose [integer] b is [1,2,3]."
+tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
     -- ++ "suppose integer c."
    -- ++ "5 to a."
@@ -364,9 +388,8 @@ programma1 = tok ("program Test:"
         ++"suppose integer c."
         ++"a is 5."
         ++"b is 10."
-        ++"increment b."
         ++"c is a plus b."
-        ++"suppose integer h."
+        ++"suppose [integer] h is [1,2,3]."
         ++"h is false."
         ++"while h is btw, this is also a comment. false do:"
             ++"increment b."
@@ -374,7 +397,7 @@ programma1 = tok ("program Test:"
                 ++"h is true."
                 ++"stop."
             ++"stop."
-        ++"when g is true do: btw, this is the 'if'."
+        ++"when g is [1,2,3] do: btw, this is the 'if'."
             ++"a is a plus 1."
             ++"a is a times b."
             ++"increment a."
@@ -388,10 +411,10 @@ programma1 = tok ("program Test:"
     ++"stop.")
 
 -- test0 calculates the parse tree:
-test0 = parse grammar Body tokenlist
-test1 = parse grammar Expr tokenlist2
+test0 = parse grammar Decl tokenlist
+test1 = parse grammar Comps tokenlist2
 test2 = parse grammar Program programma1
-test3 = parse grammar Comps (tok "a or b or 1 equals 1 and c")
+-- test3 = parse grammar Comps (tok "(5")
 
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
@@ -409,7 +432,7 @@ toRoseTree1 t = case t of
         PLeaf (c,s)     -> RoseNode (show c) [RoseNode s []]
         PNode nt ts     -> RoseNode (show nt) (map toRoseTree1 ts)
 
-test11 = showRoseTree $ toRoseTree1 test3
+test11 = showRoseTree $ toRoseTree1 test1
 
 -- ============================================
 -- building the AST
@@ -420,7 +443,10 @@ toAST :: ParseTree -> AST
 toAST (PLeaf (c,s)) = ASTLeaf s
 toAST (PNode Line [t]) = toAST t -- this should be skipped
 toAST (PNode ProgLine [t]) = toAST t
+toAST (PNode ArrayVal [t, _]) = toAST t
+toAST (PNode ArrayVal [t]) = toAST t
 toAST (PNode FalseK [t]) = toAST t
+toAST (PNode VIA [t]) = toAST t
 toAST (PNode TrueK [t]) = toAST t
 toAST (PNode TypeInt ts) = ASTLeaf (show TypeInt) -- make leaf of this
 toAST (PNode TypeBool ts) = ASTLeaf (show TypeBool)
@@ -454,11 +480,17 @@ test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
 -- type checking
--- typeCheck :: AST -> [(String, Alphabet)] -> Bool -- list of tuples (varName, varType), must be empty on call
--- typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
+typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
+typeCheck (ASTNode Program ts) varList = typeCheck (ts!!1) varList
 
--- typeCheckBody :: [AST] -> [(String, Alphabet)] -> Bool
--- typeCheckBody (t:ts) varList = True
+typeCheckBody :: [AST] -> [(String, String)] -> Bool
+typeCheckBody [] _ = True
+typeCheckBody (t@(ASTNode Decl kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+typeCheckBody (t@(ASTNode Assign kids):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
+
+makeTupleDecl :: AST -> (String, String)
+makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+
 
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.
@@ -475,8 +507,8 @@ test12 = showRoseTree $ astToRose $ toAST test2
 
 --data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
 
-keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program"]
-keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog]
+keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", "equals", "equal", "stop", ":", "program", "(", ")", "[", "]"]
+keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, greater, orK, than, smaller, equals, equal, stop, semi, prog, lPar, rPar, lBracket, rBracket]
 
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
@@ -509,11 +541,15 @@ prepare str = strlist
                     strlist = removeComments strl True
                     
 fixdots :: TXT.Text -> TXT.Text
-fixdots txt = c
+fixdots txt = g
                 where
                     a = TXT.replace (TXT.pack ",") (TXT.pack " , ") txt
                     b = TXT.replace (TXT.pack ".") (TXT.pack " . ") a
                     c = TXT.replace (TXT.pack ":") (TXT.pack " : ") b
+                    d = TXT.replace (TXT.pack "(") (TXT.pack " ( ") c
+                    e = TXT.replace (TXT.pack ")") (TXT.pack " ) ") d
+                    f = TXT.replace (TXT.pack "[") (TXT.pack " [ ") e
+                    g = TXT.replace (TXT.pack "]") (TXT.pack " ] ") f
 
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []

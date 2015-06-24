@@ -100,14 +100,15 @@ grammar nt = case nt of
         
         Line    -> [[Decl]
                     ,[Assign]
+                    ,[Incr]
                     ,[When]
-                    ,[While]
-                    ,[Incr]]
+                    ,[While]]
 
         Decl    -> [[suppose, Opt [global], Type, Idf, is, Expr, dot]
                     ,[suppose, Opt [global], Type, Idf, dot]]
                     
-        Assign  -> [[Idf, is, Expr, dot]]
+        Assign  -> [[Idf, is, Expr, dot]
+                    ,[Idf, lBracket, Expr, rBracket, is, Expr, dot]]
                     
         Incr    -> [[inc, Idf, dot]]
         
@@ -119,8 +120,6 @@ grammar nt = case nt of
         Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body, give, Alt [Value] [Idf], dot]]
         
         Arg     -> [[Type, Idf, Alt [comma] [andK]]]
-        
-        FuncName -> [[funcName]]
         
         Body    -> [[semi, Rep0 [Line], stop, dot]]
                     
@@ -151,6 +150,8 @@ grammar nt = case nt of
         SmallerThan -> [[is, smaller, than]]
         SmallerThanEq -> [[is, smaller, than, orK, equal, to]]
         
+        FuncName -> [[funcName]]
+        
         Type    -> [[TypeBool]
                    ,[TypeInt]
                    ,[TypeChar]
@@ -180,9 +181,6 @@ grammar nt = case nt of
         
 
 -- shorthand names can be handy, such as:
-typeBool    = Keyword "boolean"
-typeInt     = Keyword "integer"
-typeChar    = Keyword "character"
 lPar        = Symbol "("
 rPar        = Symbol ")"
 lBracket    = Symbol "["
@@ -196,11 +194,25 @@ char        = SyntCat Character
 idf         = SyntCat Idf
 funcName    = SyntCat FuncName
 
+typeBool    = Keyword "boolean"
+typeInt     = Keyword "integer"
+typeChar    = Keyword "character"
+greater     = Keyword "greater"
+orK         = Keyword "or"
+than        = Keyword "than"
+equal       = Keyword "equal"
+smaller     = Keyword "smaller"
+equals      = Keyword "equals"
+inc         = Keyword "increment"
+plus        = Keyword "plus"
+minus       = Keyword "minus"
+times       = Keyword "times"
+divided     = Keyword "divided"
+by          = Keyword "by"
+
 suppose     = Keyword "suppose"
 after       = Keyword "after"
 is          = Keyword "is"
-equals      = Keyword "equals"
-
 task        = Keyword "task"
 global      = Keyword "global"
 takes       = Keyword "takes"
@@ -210,24 +222,12 @@ gives       = Keyword "gives"
 dot         = Keyword "."
 to          = Keyword "to"
 while       = Keyword "while"
-isK         = Keyword "is"
 doK         = Keyword "do"
-inc         = Keyword "increment"
-plus        = Keyword "plus"
-minus       = Keyword "minus"
-times       = Keyword "times"
-divided     = Keyword "divided"
-by          = Keyword "by"
 comment     = Keyword "btw"
 when        = Keyword "when"
 otherwiseK  = Keyword "otherwise"
 nothing     = Keyword "nothing"
 give        = Keyword "give"
-greater     = Keyword "greater"
-orK         = Keyword "or"
-than        = Keyword "than"
-equal       = Keyword "equal"
-smaller     = Keyword "smaller"
 stop        = Keyword "stop"
 semi        = Keyword ":"
 prog        = Keyword "program"

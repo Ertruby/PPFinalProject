@@ -353,10 +353,6 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 tokenlist = tok "suppose [integer] b is [1,2,3]."
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
-    -- ++ "suppose integer c."
-   -- ++ "5 to a."
-   -- ++ "10 to b."
-   -- ++ "a + b to c.")
 programma1 = tok ("program Test:"
     ++ "suppose integer a."
     ++"task F takes boolean g, integer i and integer j and gives integer after:"
@@ -364,13 +360,14 @@ programma1 = tok ("program Test:"
         ++"suppose integer c."
         ++"a is 5."
         ++"b is 10."
-        ++"c is a plus b."
-        ++"a is false."
+        ++"c is (a plus b) times 5."
+        ++"a is 6."
+        ++"suppose boolean g."
+        ++"suppose boolean h."
         ++"g is false."
         ++"h is false."
-        ++"while h is btw, this is also a comment. false do:"
-            ++"increment b."
-            ++"when b is greater than 20 and 1 equals 1 do:"
+        ++"while a is greater than b do:"
+            ++"when (b is greater than 20) and (1 equals 1) do:"
                 ++"h is true."
                 ++"stop."
             ++"stop."
@@ -454,50 +451,58 @@ isPNode x = False
 test12 = showRoseTree $ astToRose $ toAST test2
 
 -- =========================================================
-test13 = typeCheckBody [toAST test2] []
+test13 = typeCheckScope [toAST test2] []
 -- -- type checking
-typeCheck :: AST -> [(String, String)] -> Bool -- list of tuples (varName, varType), must be empty on call
-typeCheck (ASTLeaf s) varList = True
-typeCheck (ASTNode Body ts) varList = typeCheckBody ts varList 
-typeCheck (ASTNode nt ts) varList = typeCheckBody ts varList --just push trough
-
-typeCheckBody :: [AST] -> [(String, String)] -> Bool
-typeCheckBody [] _ = True
-typeCheckBody (t@(ASTNode Decl [_, _]):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
---typeCheckBody (t@(ASTNode Decl [_, _, e]):ts) varList = typeCheckBody ts (makeTupleDecl t : varList)
-typeCheckBody (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList | expected == actual = typeCheckBody ts varList
-                                                                                | otherwise = error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." )
-                                                                                     where 
-                                                                                        expected = getType varList var
-                                                                                        actual = getAndCheckExpr varList expr
-typeCheckBody (t@(ASTNode Program kids):ts) varList = typeCheckBody kids varList
-typeCheckBody (t@(ASTNode ProgBody kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
-typeCheckBody (t@(ASTNode Task kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
-typeCheckBody (t@(ASTNode Body kids):ts) varList = typeCheckBody kids varList && typeCheckBody ts varList
-typeCheckBody (t@(ASTNode While kids):ts) varList = True
-typeCheckBody (t@(ASTNode When kids):ts) varList = True
-typeCheckBody (t:ts) varList = typeCheckBody ts varList
+typeCheckScope :: [AST] -> [(String, String)] -> Bool
+typeCheckScope [] _ = True
+typeCheckScope (t@(ASTNode Decl [_, _]):ts) varList = typeCheckScope ts (makeTupleDecl t : varList)
+typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList 
+    | expected == actual = typeCheckScope ts varList
+    | otherwise = error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." )
+    where 
+        expected = getType varList var
+        actual = getAndCheckExpr varList expr
+typeCheckScope (t@(ASTNode Program kids):ts) varList = typeCheckScope kids varList
+typeCheckScope (t@(ASTNode ProgBody kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
+typeCheckScope (t@(ASTNode Task kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
+typeCheckScope (t@(ASTNode Body kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
+typeCheckScope (t@(ASTNode While [condition, body]):ts) varList 
+    | (getAndCheckExpr varList condition) /= "TypeBool" = error "While statement should contain a boolean expression"
+    | otherwise = typeCheckScope [body] varList && typeCheckScope ts varList
+typeCheckScope (t@(ASTNode When kids):ts) varList 
+    | (getAndCheckExpr varList (head kids)) /= "TypeBool" = error "When statement should contain a boolean expression"
+    | otherwise = typeCheckScope (tail kids) varList && typeCheckScope ts varList
+typeCheckScope (t@(ASTNode Incr [ASTNode Idf [ASTLeaf var]]):ts) varList
+    | getType varList var /= "TypeInt" = error "increment takes an integer variable"
+    | otherwise = typeCheckScope ts varList
+typeCheckScope (t:ts) varList = typeCheckScope ts varList
 
 getAndCheckExpr :: [(String, String)] -> AST -> String
-getAndCheckExpr varlist (ASTNode Idf [ASTLeaf var]) = getType varlist var
-getAndCheckExpr varlist (ASTNode Value [ASTNode t kids]) | show t == "Boolean" = "TypeBool"
-                                                         | show t == "Integer" = "TypeInt"
-                                                         | otherwise = error "type not recognized at getAndCheckExpr: " ++ show t
-getAndCheckExpr varlist (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) | isBoolOp && leftT == rightT && leftT == "TypeBool" = "TypeBool"
-                                                                               | isIntOp && leftT == rightT && leftT == "TypeInt" = "TypeInt"
-                                                                               | isBoolOp = error  (show op) ++ " takes a boolean on each side."
-                                                                               | isIntOp = error  (show op) ++ " takes a integer on each side."
-                                                                               | otherwise = error "unknown operator"
-                                                where
-                                                    leftT = getAndCheckExpr varlist left
-                                                    rightT = getAndCheckExpr varlist right
-                                                    isBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq", "equals", "and", "or"] 
-                                                    isIntOp = op `elem` ["plus", "minus", "times" ]
-getAndCheckExpr varlist (ASTNode Expr [x]) = getAndCheckExpr varlist x
-getAndCheckExpr _ n = error (show n)
+getAndCheckExpr varList (ASTNode Idf [ASTLeaf var]) = getType varList var
+getAndCheckExpr varList (ASTNode Value [ASTNode t kids]) 
+    | show t == "Boolean" = "TypeBool"
+    | show t == "Integer" = "TypeInt"
+    | otherwise = error ("type not recognized at getAndCheckExpr: " ++ show t)
+getAndCheckExpr varList (ASTNode Expr [x]) = getAndCheckExpr varList x
+getAndCheckExpr varList (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) 
+    | op == "equals" && rightT == leftT = "TypeBool"
+    | op == "equals" = error "operator 'equals' takes an expression of the same type on each side"
+    | isBoolOp && leftT == rightT && leftT == "TypeBool" = "TypeBool"
+    | isIntOp && leftT == rightT && leftT == "TypeInt" = "TypeInt"
+    | isBoolOp = error  ((show op) ++ " takes a boolean on each side.")
+    | isIntOp = error  ((show op) ++ " takes an integer on each side.")
+    | isIntBoolOp && leftT == rightT && leftT == "TypeInt" = "TypeBool"
+    | isIntBoolOp = error (op ++ " takes an integer on each side")
+    | otherwise = error ("unknown operator" ++ show op)
+    where
+        leftT = getAndCheckExpr varList left
+        rightT = getAndCheckExpr varList right
+        isBoolOp = op `elem` ["and", "or"] 
+        isIntOp = op `elem` ["plus", "minus", "times", "DividedBy"]
+        isIntBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq"]
 
-getType :: [(String,String)] -> String -> String
-getType [] varname = error "Variable " ++ varname ++ " not in scope"
+getType :: [(String,String)] -> String -> String -- varList -> varname -> vartype
+getType [] varname = error ("Variable " ++ varname ++ " not in scope")
 getType ((n,t):xs) varname | n == varname = t 
                             | otherwise = getType xs varname
 

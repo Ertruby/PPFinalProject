@@ -60,6 +60,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | FalseK
                 | Incr
                 | VIA
+                | DividedBy
                 | Error
 
                 deriving (Eq,Show)
@@ -135,7 +136,7 @@ grammar nt = case nt of
         Op      -> [[plus]
                     ,[minus]
                     ,[times]
-                    ,[divided, by]
+                    ,[DividedBy]
                     ,[equals]
                     ,[is]
                     ,[GreaterThan]
@@ -144,7 +145,8 @@ grammar nt = case nt of
                     ,[SmallerThanEq]
                     ,[andK]
                     ,[orK]]
-                    
+        
+        DividedBy   -> [[divided, by]]
         GreaterThan -> [[is, greater, than]]
         GreaterThanEq -> [[is, greater, than, orK, equal, to]]
         SmallerThan -> [[is, smaller, than]]

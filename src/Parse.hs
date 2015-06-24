@@ -364,7 +364,7 @@ tokenlist = tok "suppose [integer] b is [1,2,3]."
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
 programma1 = tok ("program Test:"
-    ++"suppose [integer] a of length 3."
+    ++"suppose integer a is 3."
     ++"task F takes boolean g, integer i and integer j and gives integer after:"
         ++"suppose integer b. btw, this is a comment."
         ++"suppose integer c."
@@ -423,7 +423,7 @@ programma2 = tok ("program Test:"
 -- test0 calculates the parse tree:
 test0 = parse grammar Decl tokenlist
 test1 = parse grammar Expr tokenlist2
-test2 = parse grammar Program programma2
+test2 = parse grammar Program programma1
 
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
 -- First open standard_webpage.html

@@ -456,6 +456,7 @@ toAST node = case node of
         (PNode TypeInt ts)              -> ASTLeaf (show TypeInt) -- make leaf of this
         (PNode TypeBool ts)             -> ASTLeaf (show TypeBool)
         (PNode TypeChar ts)             -> ASTLeaf (show TypeChar)
+        (PNode DividedBy ts)            -> ASTLeaf (show DividedBy)
         (PNode GreaterThan ts)          -> ASTLeaf (show GreaterThan)
         (PNode GreaterThanEq ts)        -> ASTLeaf (show GreaterThanEq)
         (PNode SmallerThan ts)          -> ASTLeaf (show SmallerThan)

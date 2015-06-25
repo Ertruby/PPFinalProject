@@ -20,21 +20,24 @@ test99 = walkTree [toAST test0] [] 1
 walkTree:: [AST] -> [(String, Address)] -> Address -> [Instruction]
 walkTree [] _ _ = [EndProg]
 walkTree (n:ns) addrList addrC = case n of
+    ASTNode Program [f,b]
+            -> walkTree [b] addrList addrC ++ walkTree ns addrList addrC
+    ASTNode ProgBody ls
+            -> walkTree ls addrList addrC ++ walkTree ns addrList addrC
     ASTNode Decl [t,i]      
-            -> [Const 0 RegA, Store RegA (Addr addrC)] ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
+            -> [Const 0 RegA, Store RegA (Addr addrC)] 
+                ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
     ASTNode Decl [t,i,e]
-            -> (evalExpr [e] addrList RegA) ++ [Store RegA (Addr addrC)] ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
+            -> (evalExpr [e] addrList RegA) ++ [Store RegA (Addr addrC)] 
+                ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
+    -- ASTNode Decl [t:i:e]      
+            -- -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
+                -- ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
+    ASTNode Assign [i,e]
+            -> (evalExpr [e] addrList RegA) 
+                ++ [Store RegA (Addr (head [addr | (i, addr) <- addrList]))]
+                ++ walkTree ns addrList addrC
     _ -> error ("walkTree " ++ show n)
-    -- ASTNode Decl [t:i:es]      
-            -- -> (walkTree [es] addrList addrC) ++ [Store RegA addrC] ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
-    -- ASTNode Expr ls
-            -- -> walkTree ls addrList addrC
-    -- ASTNode Value ls 
-            -- -> walkTree ls addrList addrC
-    -- ASTNode _ ls
-            -- -> walkTree ls addrList addrC
-    -- ASTNode Integer [ASTLeaf s] 
-            -- -> [Const (read s :: Integer) RegA]
 
 regList = [RegA,RegB,RegC,RegD,RegE] 
 getNextReg:: [Reg] -> Reg -> Reg

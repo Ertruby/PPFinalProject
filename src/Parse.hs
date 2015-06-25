@@ -164,7 +164,7 @@ grammar nt = case nt of
                    ,[Character]]
                    
         Array   -> [[lBracket, Rep0 [ArrayVal], rBracket]]
-        ArrayVal    -> [[Value, Opt [comma]]]
+        ArrayVal    -> [[VIA, Opt [comma]]]
         TypeArray   -> [[lBracket, Type, rBracket]]
                 
         Boolean -> [[Alt [TrueK] [FalseK]]]
@@ -536,9 +536,9 @@ getAndCheckExpr varList (ASTNode Idf [ASTLeaf var, i])
         expected = getType varList var
         notArray = not (isPrefixOf "TypeArray" expected)
         elemType = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
-getAndCheckExpr varList (ASTNode Array elements)
-    where
-        allSameType = 
+-- getAndCheckExpr varList (ASTNode Array elements)
+    -- where
+        -- allSameType = 
 getAndCheckExpr varList (ASTNode Value [ASTNode t kids]) 
     | show t == "Boolean" = "TypeBool"
     | show t == "Integer" = "TypeInt"
@@ -562,8 +562,8 @@ getAndCheckExpr varList (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right])
         isIntBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq"]
 getAndCheckExpr _ t = error ("error at getAndCheckExpr --> " ++ show t)
 
-getAndCheckArray :: [AST] -> [(String,String)] -> String
-getAndCheckArray 
+-- getAndCheckArray :: [AST] -> [(String,String)] -> String
+-- getAndCheckArray 
 
 -- get type of variable from varList
 getType :: [(String,String)] -> String -> String -- varList -> varname -> vartype

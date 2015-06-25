@@ -12,7 +12,7 @@ import qualified Data.Maybe
 import qualified Data.Text as TXT
 
 
--- Embedded language for alphabet: the first 10 clauses should not be removed, the last three can be replaced by your own.
+-- Embedded language for alphabet:
 data Alphabet =   Symbol     String             -- Token given ("char" specific for this example)
                 | Keyword    String             -- A given string, but included in the parsetree
                 | SyntCat    Alphabet           -- A given string, but included in the parsetree
@@ -25,7 +25,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | Rep0  [Alphabet]              -- Zero or more repetitions
                 | Rep1  [Alphabet]              -- One or more repetitions
 
-                -- A few non-terminals as example; to be filled in for your own language
+                -- Non-terminals
                 | Program                       
                 | ProgBody                       
                 | Decl                     
@@ -81,12 +81,7 @@ instance Eq   (Token -> Bool) where f == g = True       --      for Alphabet won
 instance Show (Char  -> Bool) where show f = ""         -- Just make sure you never apply (==) or show to function types.
 instance Show (Token -> Bool) where show f = ""
 
-
-
-
-
 -- ==========================================================================================================
--- Example grammar, to illustrate the structure of the definition of the grammar as a function
 
 type Grammar = Alphabet -> [[Alphabet]]
 
@@ -96,20 +91,18 @@ grammar nt = case nt of
 
         Program -> [[prog, FuncName, ProgBody]]
         
-        ProgBody -> [[semi, Rep0 [ProgLine], stop, dot]]
+        ProgBody    -> [[semi, Rep0 [ProgLine], stop, dot]]
         
-        ProgLine -> [[Task]
-                    ,[Line]]
+        ProgLine    -> [[Alt [Task] [Line]]]
         
         Line    -> [[Decl]
                     ,[Assign]
+                    ,[FuncCall]
                     ,[Incr]
                     ,[When]
-                    ,[While]
-                    ,[FuncCall]]
+                    ,[While]]
 
-        Decl    -> [[suppose, Opt [global], Type, Idf, Opt [is, Expr], dot]
-                    ,[suppose, Opt [global], Type, Idf, ofK, lengthK, Expr, dot]]
+        Decl    -> [[suppose, Opt [global], Type, Idf, Alt [ofK, lengthK, Expr] [Opt [is, Expr]], dot]]
                     
         Assign  -> [[Idf, is, Expr, dot]]
                     
@@ -117,8 +110,7 @@ grammar nt = case nt of
                     
         Incr    -> [[inc, Idf, dot]]
         
-        When    -> [[when, Expr, doK, Body]
-                    ,[when, Expr, doK, Body, otherwiseK, doK, Body]]
+        When    -> [[when, Expr, doK, Body, Opt [otherwiseK, doK, Body]]]
                            
         While   -> [[while, Expr, doK, Body]]
                    
@@ -165,16 +157,14 @@ grammar nt = case nt of
                    ,[TypeArray]
                    ,[TypeNothing]]
         
-        Idf     -> [[idf]
-                    ,[idf, lBracket, Expr, rBracket]]
+        Idf     -> [[idf, Opt [lBracket, Expr, rBracket]]]
                    
         Value   -> [[Boolean]
                    ,[Integer]
                    ,[Character]]
                    
         Array   -> [[lBracket, Rep0 [ArrayVal], rBracket]]
-        ArrayVal    -> [[Value, comma]
-                        ,[Value]]
+        ArrayVal    -> [[Value, Opt [comma]]]
         TypeArray   -> [[lBracket, Type, rBracket]]
                 
         Boolean -> [[Alt [TrueK] [FalseK]]]
@@ -187,7 +177,7 @@ grammar nt = case nt of
         
         Character -> [[char]]
         TypeChar -> [[typeChar]]
-        
+                
         TypeNothing -> [[nothing]]
         
 
@@ -399,17 +389,19 @@ programma2 = tok ("program Test:"
         ++"task Func takes boolean g, integer i and integer j and gives integer after:"
             ++"suppose integer b is 10."
             ++"suppose integer c is i plus j."
-            ++"a[0] is 5."
-            ++"a[1] is c."
-            ++"c is a[0] plus b."
-            ++"g is false."
-            ++"suppose boolean h is true."
-            ++"while h do:"
-                ++"increment b."
-                ++"when b is greater than 20 do:"
-                    ++"h is false."
-                ++"stop."
-            ++"stop."
+            ++"suppose [integer] o is [1,2,3]."
+            ++"suppose [integer] k."
+            -- ++"a[0] is 5."
+            -- ++"a[1] is c."
+            -- ++"c is a[0] plus b."
+            -- ++"g is false."
+            -- ++"suppose boolean h is true."
+            -- ++"while h do:"
+                -- ++"increment b."
+                -- ++"when b is greater than 20 do:"
+                    -- ++"h is false."
+                -- ++"stop."
+            -- ++"stop."
             ++"when g equals false do:"
                 ++"a[2] is a[0] times a[1]."
             ++"stop."
@@ -427,6 +419,7 @@ test0 = parse grammar Decl tokenlist
 test1 = parse grammar Expr tokenlist2
 test2 = parse grammar Program programma1
 test3 = parse grammar Program programma2
+
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
 -- First open standard_webpage.html
 toRoseTree0, toRoseTree1 :: ParseTree -> RoseTree

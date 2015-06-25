@@ -385,23 +385,24 @@ programma1 = tok ("program Test:"
     
 programma2 = tok ("program Test:"
         ++"suppose [integer] a of length 3."
-        ++"a is [1,2,3]."
+        ++"suppose integer herman is 5."
+        ++"a is [5,5,herman]."
         ++"task Func takes boolean g, integer i and integer j and gives integer after:"
             ++"suppose integer b is 10."
             ++"suppose integer c is i plus j."
             ++"suppose [integer] o is [1,2,3]."
             ++"suppose [integer] k."
-            -- ++"a[0] is 5."
-            -- ++"a[1] is c."
-            -- ++"c is a[0] plus b."
-            -- ++"g is false."
-            -- ++"suppose boolean h is true."
-            -- ++"while h do:"
-                -- ++"increment b."
-                -- ++"when b is greater than 20 do:"
-                    -- ++"h is false."
-                -- ++"stop."
-            -- ++"stop."
+            ++"a[0] is 5."
+            ++"a[1] is c."
+            ++"c is a[0] plus b."
+            ++"g is false."
+            ++"suppose boolean h is true."
+            ++"while h do:"
+                ++"increment b."
+                ++"when b is greater than 20 do:"
+                    ++"h is false."
+                ++"stop."
+            ++"stop."
             ++"when g equals false do:"
                 ++"a[2] is a[0] times a[1]."
             ++"stop."
@@ -443,32 +444,33 @@ test11 = showRoseTree $ toRoseTree1 test1
 data AST = ASTNode Alphabet [AST] | ASTLeaf String deriving (Show, Eq)
 
 toAST :: ParseTree -> AST
-toAST (PLeaf (c,s)) = ASTLeaf s
-toAST (PNode Line [t]) = toAST t -- this should be skipped
-toAST (PNode ProgLine [t]) = toAST t
-toAST (PNode ArrayVal [t, _]) = toAST t
-toAST (PNode ArrayVal [t]) = toAST t
-toAST (PNode FalseK [t]) = toAST t
-toAST (PNode VIA [t]) = toAST t
-toAST (PNode TrueK [t]) = toAST t
-toAST (PNode TypeInt ts) = ASTLeaf (show TypeInt) -- make leaf of this
-toAST (PNode TypeBool ts) = ASTLeaf (show TypeBool)
-toAST (PNode TypeChar ts) = ASTLeaf (show TypeChar)
-toAST (PNode GreaterThan ts) = ASTLeaf (show GreaterThan)
-toAST (PNode GreaterThanEq ts) = ASTLeaf (show GreaterThanEq)
-toAST (PNode SmallerThan ts) = ASTLeaf (show SmallerThan)
-toAST (PNode SmallerThanEq ts) = ASTLeaf (show SmallerThanEq)
-toAST (PNode Arg ts) = ASTNode Arg (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] -- this one doenst need its leafs
-toAST (PNode Task ts) = ASTNode Task (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode Body ts) = ASTNode Body (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode Decl ts) = ASTNode Decl (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode When ts) = ASTNode When (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode Program ts) = ASTNode Program (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode Assign ts) = ASTNode Assign (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode ProgBody ts) = ASTNode ProgBody (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode While ts) = ASTNode While (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode Incr ts) = ASTNode Incr (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-toAST (PNode nt ts) = ASTNode nt (map toAST ts)
+toAST node = case node of
+        (PLeaf (c,s))                   -> ASTLeaf s
+        (PNode Line [t])                -> toAST t -- this should be skipped
+        (PNode ProgLine [t])            -> toAST t
+        (PNode ArrayVal [t, _])         -> toAST t
+        (PNode ArrayVal [t])            -> toAST t
+        (PNode FalseK [t])              -> toAST t
+        (PNode VIA [t])                 -> toAST t
+        (PNode TrueK [t])               -> toAST t
+        (PNode TypeInt ts)              -> ASTLeaf (show TypeInt) -- make leaf of this
+        (PNode TypeBool ts)             -> ASTLeaf (show TypeBool)
+        (PNode TypeChar ts)             -> ASTLeaf (show TypeChar)
+        (PNode GreaterThan ts)          -> ASTLeaf (show GreaterThan)
+        (PNode GreaterThanEq ts)        -> ASTLeaf (show GreaterThanEq)
+        (PNode SmallerThan ts)          -> ASTLeaf (show SmallerThan)
+        (PNode SmallerThanEq ts)        -> ASTLeaf (show SmallerThanEq)
+        (PNode Arg ts)                  -> ASTNode Arg (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] -- this one doenst need its leafs
+        (PNode Task ts)                 -> ASTNode Task (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode Body ts)                 -> ASTNode Body (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode Decl ts)                 -> ASTNode Decl (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode When ts)                 -> ASTNode When (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode Program ts)              -> ASTNode Program (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode Assign ts)               -> ASTNode Assign (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode ProgBody ts)             -> ASTNode ProgBody (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode While ts)                -> ASTNode While (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode Incr ts)                 -> ASTNode Incr (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode nt ts)                   -> ASTNode nt (map toAST ts)
 
 -- showing the AST
 astToRose :: AST -> RoseTree
@@ -482,94 +484,108 @@ isPNode x = False
 test12 = showRoseTree $ astToRose $ toAST test3
 
 -- =========================================================
+-- type checking
+-- =========================================================
 test13 = typeCheckScope [toAST test3] []
--- -- type checking
--- general part
+
+-- general type checker per scope
 typeCheckScope :: [AST] -> [(String, String)] -> Bool
-typeCheckScope [] _ = True
-typeCheckScope (t@(ASTNode Arg [_, _]):ts) varList = typeCheckScope ts (makeTupleDecl t : varList)
-typeCheckScope (t@(ASTNode Decl [_, _]):ts) varList = typeCheckScope ts (makeTupleDecl t : varList)
-typeCheckScope (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts) varList
-    | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt" = error ("length of array should be an integer --> " ++ show t) 
-    | otherwise = typeCheckScope ts (makeTupleDecl (ASTNode Decl [tp,i]) : varList) 
-typeCheckScope (t@(ASTNode Decl [tp, i, e]):ts) varList = typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl (ASTNode Decl [tp,i]) : varList
-typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var, i], expr]):ts) varList 
-    | iNotOke = error ("index of array should be an integer")
-    | notArray = error (show var ++ "is not an array")
-    | elemType == actual = typeCheckScope ts varList
-    | otherwise = error (show var ++ " is array of " ++ elemType ++ " not of " ++ actual ++ "." )
-    where 
-        iNotOke = not (getAndCheckExpr varList i == "TypeInt")
-        expected = getType varList var
-        notArray = not (isPrefixOf "TypeArray" expected)
-        elemType = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
-        actual = getAndCheckExpr varList expr
-typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList
-    | expected == actual = typeCheckScope ts varList
-    | otherwise = error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." )
-    where 
-        expected = getType varList var
-        actual = getAndCheckExpr varList expr
+typeCheckScope nodes varList = case nodes of
+        []                                                                              -> True
+        (t@(ASTNode Arg [_, _]):ts)                                                     -> typeCheckScope ts (makeTupleDecl t : varList)
+        (t@(ASTNode Decl [_, _]):ts)                                                    -> typeCheckScope ts (makeTupleDecl t : varList)
+        (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts)
+            | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> error ("length of array should be an integer --> " ++ show t) 
+            | otherwise                                                                 -> typeCheckScope ts (makeTupleDecl (ASTNode Decl [tp,i]) : varList) 
+        (t@(ASTNode Decl [tp, i, e]):ts)                                                -> typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl (ASTNode Decl [tp,i]) : varList
+        (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var, i]), expr]):ts) 
+            | iNotOke                                                                   -> error ("index of array should be an integer")
+            | notArray                                                                  -> error (show var ++ "is not an array")
+            | elemType == actual                                                        -> typeCheckScope ts varList
+            | otherwise                                                                 -> error (show var ++ " is array of " ++ elemType ++ " not of " ++ actual ++ "." )
+            where 
+                iNotOke     = not (getAndCheckExpr varList i == "TypeInt")
+                expected    = getType varList t2
+                notArray    = not (isPrefixOf "TypeArray" expected)
+                elemType    = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
+                actual      = getAndCheckExpr varList expr
+        (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var]), expr]):ts)
+            | expected == actual || actual == "TypeEmpty"                               -> typeCheckScope ts varList
+            | otherwise                                                                 -> error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ ". --> " ++ show t )
+            where 
+                expected    = getType varList t2
+                actual      = getAndCheckExpr varList expr
+        (t@(ASTNode Program kids):ts)                                                   -> typeCheckScope kids varList
+        (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids varList && typeCheckScope ts varList
+        (t@(ASTNode Task kids):ts)                                                      -> typeCheckScope kids varList && typeCheckScope ts varList
+        (t@(ASTNode Body kids):ts)                                                      -> typeCheckScope kids varList && typeCheckScope ts varList
+        (t@(ASTNode While [condition, body]):ts) 
+            | (getAndCheckExpr varList condition) /= "TypeBool"                         -> error "While statement should contain a boolean expression"
+            | otherwise                                                                 -> typeCheckScope [body] varList && typeCheckScope ts varList
+        (t@(ASTNode When kids):ts) 
+            | (getAndCheckExpr varList (head kids)) /= "TypeBool"                       -> error "When statement should contain a boolean expression"
+            | otherwise                                                                 -> typeCheckScope (tail kids) varList && typeCheckScope ts varList
+        (t@(ASTNode Incr [t2@(ASTNode Idf [ASTLeaf var])]):ts)
+            | getType varList t2 /= "TypeInt"                                          -> error "increment takes an integer variable"
+            | otherwise                                                                 -> typeCheckScope ts varList
+        (t:ts)                                                                          -> typeCheckScope ts varList
 
-typeCheckScope (t@(ASTNode Program kids):ts) varList = typeCheckScope kids varList
-typeCheckScope (t@(ASTNode ProgBody kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
-typeCheckScope (t@(ASTNode Task kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
-typeCheckScope (t@(ASTNode Body kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
-typeCheckScope (t@(ASTNode While [condition, body]):ts) varList 
-    | (getAndCheckExpr varList condition) /= "TypeBool" = error "While statement should contain a boolean expression"
-    | otherwise = typeCheckScope [body] varList && typeCheckScope ts varList
-typeCheckScope (t@(ASTNode When kids):ts) varList 
-    | (getAndCheckExpr varList (head kids)) /= "TypeBool" = error "When statement should contain a boolean expression"
-    | otherwise = typeCheckScope (tail kids) varList && typeCheckScope ts varList
-typeCheckScope (t@(ASTNode Incr [ASTNode Idf [ASTLeaf var]]):ts) varList
-    | getType varList var /= "TypeInt" = error "increment takes an integer variable"
-    | otherwise = typeCheckScope ts varList
-typeCheckScope (t:ts) varList = typeCheckScope ts varList
-
--- expr part (including sub trees of expr)
+-- type and correctness checking of expression sub trees
 getAndCheckExpr :: [(String, String)] -> AST -> String
-getAndCheckExpr varList (ASTNode Idf [ASTLeaf var]) = getType varList var
-getAndCheckExpr varList (ASTNode Idf [ASTLeaf var, i]) 
-    | notArray = error (show var ++ "is not an array")
-    | otherwise = elemType
-    where
-        expected = getType varList var
-        notArray = not (isPrefixOf "TypeArray" expected)
-        elemType = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
--- getAndCheckExpr varList (ASTNode Array elements)
-    -- where
-        -- allSameType = 
-getAndCheckExpr varList (ASTNode Value [ASTNode t kids]) 
-    | show t == "Boolean" = "TypeBool"
-    | show t == "Integer" = "TypeInt"
-    | otherwise = error ("type not recognized at getAndCheckExpr: " ++ show t)
-getAndCheckExpr varList (ASTNode Expr [x]) = getAndCheckExpr varList x
-getAndCheckExpr varList (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) 
-    | op == "equals" && rightT == leftT = "TypeBool"
-    | op == "equals" = error "operator 'equals' takes an expression of the same type on each side"
-    | isBoolOp && leftT == rightT && leftT == "TypeBool" = "TypeBool"
-    | isIntOp && leftT == rightT && leftT == "TypeInt" = "TypeInt"
-    | isBoolOp = error  ((show op) ++ " takes a boolean on each side.")
-    | isIntOp = error  ((show op) ++ " takes an integer on each side.")
-    | isIntBoolOp && leftT == rightT && leftT == "TypeInt" = "TypeBool"
-    | isIntBoolOp = error (op ++ " takes an integer on each side")
-    | otherwise = error ("unknown operator" ++ show op)
-    where
-        leftT = getAndCheckExpr varList left
-        rightT = getAndCheckExpr varList right
-        isBoolOp = op `elem` ["and", "or"] 
-        isIntOp = op `elem` ["plus", "minus", "times", "DividedBy"]
-        isIntBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq"]
-getAndCheckExpr _ t = error ("error at getAndCheckExpr --> " ++ show t)
-
--- getAndCheckArray :: [AST] -> [(String,String)] -> String
--- getAndCheckArray 
+getAndCheckExpr varList node = case node of
+        (ASTNode Idf [ASTLeaf var])                                 -> getType varList node
+        (ASTNode Idf [ASTLeaf var, i]) 
+            | notArray                                              -> error (show var ++ "is not an array")
+            | otherwise                                             -> elemType
+            where
+                expected    = getType varList node
+                notArray    = not (isPrefixOf "TypeArray" expected)
+                elemType    = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
+        (ASTNode Array elements)                                     -> if length elemTypes == 0 then "TypeEmpty" else if allSameType then ("TypeArray" ++ elemTypes!!0) else error "all elements in an array should be the same type" 
+            where
+                elemTypes = map (getType varList) elements
+                allSameType = and $ map (== head elemTypes) (tail elemTypes)
+        (ASTNode Value [ASTNode t kids]) 
+            | show t == "Boolean"                                   -> "TypeBool"
+            | show t == "Integer"                                   -> "TypeInt"
+            | otherwise                                             -> error ("type not recognized at getAndCheckExpr: " ++ show t)
+        (ASTNode Expr [x])                                          -> getAndCheckExpr varList x
+        (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) 
+            | op == "equals" && rightT == leftT                     -> "TypeBool"
+            | op == "equals"                                        -> error "operator 'equals' takes an expression of the same type on each side"
+            | isBoolOp && leftT == rightT && leftT == "TypeBool"    -> "TypeBool"
+            | isIntOp && leftT == rightT && leftT == "TypeInt"      -> "TypeInt"
+            | isBoolOp                                              -> error  ((show op) ++ " takes a boolean on each side.")
+            | isIntOp                                               -> error  ((show op) ++ " takes an integer on each side.")
+            | isIntBoolOp && leftT == rightT && leftT == "TypeInt"  -> "TypeBool"
+            | isIntBoolOp                                           -> error (op ++ " takes an integer on each side")
+            | otherwise                                             -> error ("unknown operator" ++ show op)
+            where
+                leftT       = getAndCheckExpr varList left
+                rightT      = getAndCheckExpr varList right
+                isBoolOp    = op `elem` ["and", "or"] 
+                isIntOp     = op `elem` ["plus", "minus", "times", "DividedBy"]
+                isIntBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq"]
+        t                                                           -> error ("error at getAndCheckExpr --> " ++ show t)
 
 -- get type of variable from varList
-getType :: [(String,String)] -> String -> String -- varList -> varname -> vartype
-getType [] varname = error ("Variable " ++ varname ++ " not in scope")
-getType ((n,t):xs) varname | n == varname = t 
-                            | otherwise = getType xs varname
+getType :: [(String,String)] -> AST -> String
+getType [] (ASTNode Idf [ASTLeaf var])              = error ("Variable " ++ var ++ " not in scope")
+getType varList (ASTNode Idf [ASTLeaf var, i])      = getType varList (ASTNode Idf [ASTLeaf var])
+getType ((n,t):xs) t2@(ASTNode Idf [ASTLeaf var]) 
+        | n == var                                  = t
+        | otherwise                                 = getType xs t2
+getType _ (ASTNode Value [ASTNode Integer _])       = "TypeInt"
+getType _ (ASTNode Value [ASTNode Boolean _])       = "TypeBool"
+getType _ t                                         = error ("unsupported node in getType --> " ++ show t)
+
+-- check if variable is in same scope ############################################### we do dis?
+inSameScope :: [(String,String)] -> String -> Bool
+inSameScope [] _ = False
+inSameScope ((n,t):xs) varname
+        | n == varname = True
+        | t == "#" = False
+        | otherwise = inSameScope xs varname
 
 -- make tuple to add to varList
 makeTupleDecl :: AST -> (String, String)
@@ -578,6 +594,7 @@ makeTupleDecl (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTL
 makeTupleDecl (ASTNode Arg [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
 makeTupleDecl t = error ("error in makeTupleDecl --> " ++ show t)
 
+-- ==================================================
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.
 --      This will naturally be a recursive algebraic type, such that it effectively represents the AST.

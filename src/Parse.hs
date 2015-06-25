@@ -8,6 +8,7 @@ import Data.List
 import FPPrac.Trees
 import Prelude
 import Data.Char
+import qualified Data.Maybe
 import qualified Data.Text as TXT
 
 
@@ -394,6 +395,7 @@ programma1 = tok ("program Test:"
     
 programma2 = tok ("program Test:"
         ++"suppose [integer] a of length 3."
+        ++"a is [1,2,3]."
         ++"task Func takes boolean g, integer i and integer j and gives integer after:"
             ++"suppose integer b is 10."
             ++"suppose integer c is i plus j."
@@ -424,7 +426,7 @@ programma2 = tok ("program Test:"
 test0 = parse grammar Decl tokenlist
 test1 = parse grammar Expr tokenlist2
 test2 = parse grammar Program programma1
-
+test3 = parse grammar Program programma2
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
 -- First open standard_webpage.html
 toRoseTree0, toRoseTree1 :: ParseTree -> RoseTree
@@ -484,20 +486,38 @@ isPNode :: ParseTree -> Bool
 isPNode (PNode _ _) = True
 isPNode x = False
 
-test12 = showRoseTree $ astToRose $ toAST test2
+test12 = showRoseTree $ astToRose $ toAST test3
 
 -- =========================================================
-test13 = typeCheckScope [toAST test2] []
+test13 = typeCheckScope [toAST test3] []
 -- -- type checking
+-- general part
 typeCheckScope :: [AST] -> [(String, String)] -> Bool
 typeCheckScope [] _ = True
+typeCheckScope (t@(ASTNode Arg [_, _]):ts) varList = typeCheckScope ts (makeTupleDecl t : varList)
 typeCheckScope (t@(ASTNode Decl [_, _]):ts) varList = typeCheckScope ts (makeTupleDecl t : varList)
-typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList 
+typeCheckScope (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts) varList
+    | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt" = error ("length of array should be an integer --> " ++ show t) 
+    | otherwise = typeCheckScope ts (makeTupleDecl (ASTNode Decl [tp,i]) : varList) 
+typeCheckScope (t@(ASTNode Decl [tp, i, e]):ts) varList = typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl (ASTNode Decl [tp,i]) : varList
+typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var, i], expr]):ts) varList 
+    | iNotOke = error ("index of array should be an integer")
+    | notArray = error (show var ++ "is not an array")
+    | elemType == actual = typeCheckScope ts varList
+    | otherwise = error (show var ++ " is array of " ++ elemType ++ " not of " ++ actual ++ "." )
+    where 
+        iNotOke = not (getAndCheckExpr varList i == "TypeInt")
+        expected = getType varList var
+        notArray = not (isPrefixOf "TypeArray" expected)
+        elemType = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
+        actual = getAndCheckExpr varList expr
+typeCheckScope (t@(ASTNode Assign [ASTNode Idf [ASTLeaf var], expr]):ts) varList
     | expected == actual = typeCheckScope ts varList
     | otherwise = error (show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." )
     where 
         expected = getType varList var
         actual = getAndCheckExpr varList expr
+
 typeCheckScope (t@(ASTNode Program kids):ts) varList = typeCheckScope kids varList
 typeCheckScope (t@(ASTNode ProgBody kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
 typeCheckScope (t@(ASTNode Task kids):ts) varList = typeCheckScope kids varList && typeCheckScope ts varList
@@ -513,8 +533,19 @@ typeCheckScope (t@(ASTNode Incr [ASTNode Idf [ASTLeaf var]]):ts) varList
     | otherwise = typeCheckScope ts varList
 typeCheckScope (t:ts) varList = typeCheckScope ts varList
 
+-- expr part (including sub trees of expr)
 getAndCheckExpr :: [(String, String)] -> AST -> String
 getAndCheckExpr varList (ASTNode Idf [ASTLeaf var]) = getType varList var
+getAndCheckExpr varList (ASTNode Idf [ASTLeaf var, i]) 
+    | notArray = error (show var ++ "is not an array")
+    | otherwise = elemType
+    where
+        expected = getType varList var
+        notArray = not (isPrefixOf "TypeArray" expected)
+        elemType = Data.Maybe.fromJust (stripPrefix "TypeArray" expected)
+getAndCheckExpr varList (ASTNode Array elements)
+    where
+        allSameType = 
 getAndCheckExpr varList (ASTNode Value [ASTNode t kids]) 
     | show t == "Boolean" = "TypeBool"
     | show t == "Integer" = "TypeInt"
@@ -536,15 +567,23 @@ getAndCheckExpr varList (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right])
         isBoolOp = op `elem` ["and", "or"] 
         isIntOp = op `elem` ["plus", "minus", "times", "DividedBy"]
         isIntBoolOp = op `elem` ["GreaterThan", "GreaterThanEq", "SmallerThan", "SmallerThanEq"]
+getAndCheckExpr _ t = error ("error at getAndCheckExpr --> " ++ show t)
 
+getAndCheckArray :: [AST] -> [(String,String)] -> String
+getAndCheckArray 
+
+-- get type of variable from varList
 getType :: [(String,String)] -> String -> String -- varList -> varname -> vartype
 getType [] varname = error ("Variable " ++ varname ++ " not in scope")
 getType ((n,t):xs) varname | n == varname = t 
                             | otherwise = getType xs varname
 
+-- make tuple to add to varList
 makeTupleDecl :: AST -> (String, String)
 makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
---getExprType :: AST -> String
+makeTupleDecl (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
+makeTupleDecl (ASTNode Arg [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+makeTupleDecl t = error ("error in makeTupleDecl --> " ++ show t)
 
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.

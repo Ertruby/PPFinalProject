@@ -338,7 +338,7 @@ parserGen gr (nt:rule) (nt0,ts,(cat,str):tokens)
 parse :: Grammar -> Alphabet -> [Token] -> ParseTree
 
 parse gr s tokens       | ptrees /= []  = head ptrees
-                        | otherwise     = error ("Error")
+                        | otherwise     = error ("ParseError")
         where
           ptrees = [ t  | r <- gr s
                         , (t,rem) <- parserGen gr r (s,[],tokens)
@@ -386,7 +386,8 @@ programma1 = tok ("program Test:"
 programma2 = tok ("program Test:"
         ++"suppose [integer] a of length 3."
         ++"suppose integer herman is 5."
-        ++"a is [5,5,herman]."
+        ++"a is [5,-5,herman]."
+        ++"suppose integer c is H(5)."
         ++"task Func takes boolean g, integer i and integer j and gives integer after:"
             ++"suppose integer b is 10."
             ++"suppose integer c is i plus j."
@@ -395,6 +396,7 @@ programma2 = tok ("program Test:"
             ++"a[0] is 5."
             ++"a[1] is c."
             ++"c is a[0] plus b."
+            ++"Stuff(5)."
             ++"g is false."
             ++"suppose boolean h is true."
             ++"while h do:"
@@ -413,6 +415,9 @@ programma2 = tok ("program Test:"
         ++"task Stuff takes integer i and gives nothing after:"
             ++"a[1] is 9."
         ++"stop."
+        ++"task H takes integer i and gives integer after:"
+            ++"suppose integer n is i plus 1."
+        ++"give n."
     ++"stop.")
 
 -- test0 calculates the parse tree:
@@ -456,6 +461,7 @@ toAST node = case node of
         (PNode TypeInt ts)              -> ASTLeaf (show TypeInt) -- make leaf of this
         (PNode TypeBool ts)             -> ASTLeaf (show TypeBool)
         (PNode TypeChar ts)             -> ASTLeaf (show TypeChar)
+        (PNode TypeNothing ts)          -> ASTLeaf (show TypeNothing)
         (PNode GreaterThan ts)          -> ASTLeaf (show GreaterThan)
         (PNode GreaterThanEq ts)        -> ASTLeaf (show GreaterThanEq)
         (PNode SmallerThan ts)          -> ASTLeaf (show SmallerThan)
@@ -489,15 +495,16 @@ test12 = showRoseTree $ astToRose $ toAST test3
 test13 = typeCheckScope [toAST test3] []
 
 -- general type checker per scope
-typeCheckScope :: [AST] -> [(String, String)] -> Bool
+typeCheckScope :: [AST] -> [(String, String)] -> Bool -- second argument (varList) should be empty when called by another function
 typeCheckScope nodes varList = case nodes of
         []                                                                              -> True
-        (t@(ASTNode Arg [_, _]):ts)                                                     -> typeCheckScope ts (makeTupleDecl t : varList)
-        (t@(ASTNode Decl [_, _]):ts)                                                    -> typeCheckScope ts (makeTupleDecl t : varList)
+        (t@(ASTNode Arg [_, _]):ts)                                                     -> typeCheckScope ts (makeTupleDecl varList t : varList)
+        
+        (t@(ASTNode Decl [_, _]):ts)                                                    -> typeCheckScope ts (makeTupleDecl varList t : varList)
         (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts)
             | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> error ("length of array should be an integer --> " ++ show t) 
-            | otherwise                                                                 -> typeCheckScope ts (makeTupleDecl (ASTNode Decl [tp,i]) : varList) 
-        (t@(ASTNode Decl [tp, i, e]):ts)                                                -> typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl (ASTNode Decl [tp,i]) : varList
+            | otherwise                                                                 -> typeCheckScope ts (makeTupleDecl varList (ASTNode Decl [tp,i]) : varList) 
+        (t@(ASTNode Decl [tp, i, e]):ts)                                                -> typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl varList (ASTNode Decl [tp,i]) : varList
         (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var, i]), expr]):ts) 
             | iNotOke                                                                   -> error ("index of array should be an integer")
             | notArray                                                                  -> error (show var ++ "is not an array")
@@ -515,21 +522,27 @@ typeCheckScope nodes varList = case nodes of
             where 
                 expected    = getType varList t2
                 actual      = getAndCheckExpr varList expr
-        (t@(ASTNode Program kids):ts)                                                   -> typeCheckScope kids varList
-        (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids varList && typeCheckScope ts varList
-        (t@(ASTNode Task kids):ts)                                                      -> typeCheckScope kids varList && typeCheckScope ts varList
+        (t@(ASTNode Program kids):ts)                                                   -> typeCheckScope kids (("#", "#"):varList)
+        (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids ((getGlobals kids)++varList) && typeCheckScope ts varList
+        (t@(ASTNode Task kids):ts)                                                      -> typeCheckScope kids (("#", "#"):varList) && typeCheckScope ts varList
         (t@(ASTNode Body kids):ts)                                                      -> typeCheckScope kids varList && typeCheckScope ts varList
         (t@(ASTNode While [condition, body]):ts) 
             | (getAndCheckExpr varList condition) /= "TypeBool"                         -> error "While statement should contain a boolean expression"
-            | otherwise                                                                 -> typeCheckScope [body] varList && typeCheckScope ts varList
+            | otherwise                                                                 -> typeCheckScope [body] (("#", "#"):varList) && typeCheckScope ts varList
         (t@(ASTNode When kids):ts) 
             | (getAndCheckExpr varList (head kids)) /= "TypeBool"                       -> error "When statement should contain a boolean expression"
-            | otherwise                                                                 -> typeCheckScope (tail kids) varList && typeCheckScope ts varList
+            | otherwise                                                                 -> typeCheckScope (tail kids) (("#", "#"):varList) && typeCheckScope ts varList
         (t@(ASTNode Incr [t2@(ASTNode Idf [ASTLeaf var])]):ts)
-            | getType varList t2 /= "TypeInt"                                          -> error "increment takes an integer variable"
+            | getType varList t2 /= "TypeInt"                                           -> error "increment takes an integer variable"
             | otherwise                                                                 -> typeCheckScope ts varList
         (t:ts)                                                                          -> typeCheckScope ts varList
 
+-- get globals variables and functions for initializing the varList
+getGlobals :: [AST] -> [(String,String)]
+getGlobals [] = []
+getGlobals (t@(ASTNode Task kids):ts) = makeTupleTask t : getGlobals ts
+getGlobals (t:ts) = getGlobals ts
+        
 -- type and correctness checking of expression sub trees
 getAndCheckExpr :: [(String, String)] -> AST -> String
 getAndCheckExpr varList node = case node of
@@ -549,6 +562,19 @@ getAndCheckExpr varList node = case node of
             | show t == "Boolean"                                   -> "TypeBool"
             | show t == "Integer"                                   -> "TypeInt"
             | otherwise                                             -> error ("type not recognized at getAndCheckExpr: " ++ show t)
+        (ASTNode FuncCall (name:args))
+            | argsOk                                                -> returnType
+            | otherwise                                             -> error ("Function " ++ show name ++ " takes arguments of type " ++ show argTypes0 ++", not of type " ++ show argTypes1)
+            where
+                txtType         = TXT.pack(getType varList node)
+                txtTypeSplit    = TXT.splitOn (TXT.pack ",") txtType
+                typeSplit       = map TXT.unpack txtTypeSplit
+                returnType      = head typeSplit
+                argTypes0       = tail typeSplit
+                argTypes1       = map (getAndCheckExpr varList) args
+                argTuples       = zip argTypes0 argTypes1
+                argsOk          = length argTypes0 == length argTypes1 && not (False `elem` (map (\(x,y) -> x == y) argTuples))
+                
         (ASTNode Expr [x])                                          -> getAndCheckExpr varList x
         (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) 
             | op == "equals" && rightT == leftT                     -> "TypeBool"
@@ -577,6 +603,10 @@ getType ((n,t):xs) t2@(ASTNode Idf [ASTLeaf var])
         | otherwise                                 = getType xs t2
 getType _ (ASTNode Value [ASTNode Integer _])       = "TypeInt"
 getType _ (ASTNode Value [ASTNode Boolean _])       = "TypeBool"
+getType [] t2@(ASTNode FuncCall (ASTNode FuncName [ASTLeaf name]:args)) = error ("Function " ++ name ++ " not in scope")
+getType ((n,t):xs) t2@(ASTNode FuncCall (ASTNode FuncName [ASTLeaf name]:args))
+        | n == name                                 = t
+        | otherwise                                 = getType xs t2
 getType _ t                                         = error ("unsupported node in getType --> " ++ show t)
 
 -- check if variable is in same scope ############################################### we do dis?
@@ -586,13 +616,44 @@ inSameScope ((n,t):xs) varname
         | n == varname = True
         | t == "#" = False
         | otherwise = inSameScope xs varname
-
+        
 -- make tuple to add to varList
-makeTupleDecl :: AST -> (String, String)
-makeTupleDecl (ASTNode Decl [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
-makeTupleDecl (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
-makeTupleDecl (ASTNode Arg [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
-makeTupleDecl t = error ("error in makeTupleDecl --> " ++ show t)
+makeTupleTask :: AST -> (String, String)
+makeTupleTask (ASTNode Task kids) = makeTupleTaskH kids ("", "")
+makeTupleTask t = error ("Node not supported in makeTupleTask --> " ++ show t)
+
+makeTupleTaskH :: [AST] -> (String, String) -> (String, String)
+makeTupleTaskH [] tuple = tuple
+makeTupleTaskH (ASTNode FuncName [ASTLeaf name]:ts) (n,tp) = makeTupleTaskH ts (name, tp)
+makeTupleTaskH (ASTNode Arg [ASTNode Type [ASTLeaf t], _]:ts) (n,tp) = makeTupleTaskH ts (n,tp ++ "," ++ t)
+makeTupleTaskH (ASTNode Type [ASTLeaf t]:ts) (n,tp) = makeTupleTaskH ts (n,t ++ tp)
+makeTupleTaskH (ASTNode Body kids:ts) (n,tp) 
+        | ok = makeTupleTaskH ts (n,tp)
+        | otherwise = error ("function " ++ n ++ " should return a " ++ expectedR ++ ", but returns a " ++ actualR)
+        where
+            actualR = getReturnType kids
+            expectedR = TXT.unpack ((TXT.splitOn (TXT.pack ",") (TXT.pack tp))!!0)
+            ok = actualR == expectedR
+makeTupleTaskH (t:ts) tuple = error ("Node not supported in makeTupleTaskH --> " ++ show t)
+
+getReturnType :: [AST] -> String -- kids of the body of the task should go in here only
+getReturnType ts | getNodeType (head (reverse ts)) /= Idf = "TypeNothing"
+getReturnType (ASTNode Decl [ASTNode Type [ASTLeaf t], idf]:ts)
+        | idf == head (reverse ts) = t 
+        | otherwise = getReturnType ts
+getReturnType (ASTNode Decl [ASTNode Type [ASTLeaf t], idf, _]:ts)
+        | idf == head (reverse ts) = t 
+        | otherwise = getReturnType ts
+getReturnType (t:ts) = getReturnType ts -- not a decl
+
+makeTupleDecl :: [(String,String)] -> AST -> (String, String)
+makeTupleDecl varList (ASTNode _ [_, ASTNode Idf [ASTLeaf nameStr]]) | inSameScope varList nameStr = error ("variable " ++ nameStr ++ " is already defined in this scope")
+makeTupleDecl _ (ASTNode _ [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+makeTupleDecl _ (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
+makeTupleDecl _ t = error ("Node not supported in makeTupleDecl --> " ++ show t)
+
+getNodeType :: AST -> Alphabet
+getNodeType (ASTNode x _) = x
 
 -- ==================================================
 -- ==================================================
@@ -605,11 +666,6 @@ makeTupleDecl t = error ("error in makeTupleDecl --> " ++ show t)
 
 -- ========================================================
 -- tokenizer
-
--- error ("Dear sir,\n We have noticed that you have made a mistake in your beloved code. You have used a word that we do not recognize, namely" ++ x ++ ". We kindly ask you to reconsider your code.\n Thanks in advance, we hope we can help you further next time.\n Good luck!")
-
---data T = Error | Suppose | Intt | Boolt | Chart | Intval | Truet | Falset | Charval | Task | Fname | Takes | Comma | And | Gives | Btw | Dot | To | While | Is | Do | Incr | Plus | Minus | Times | Devides | When | Otherwise | Give | Nothingt | After | Varname | Greater | Or | Than | Smaller | Equals | Equal deriving (Show, Eq)
-
 keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", 
         ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", 
         "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", 
@@ -628,7 +684,7 @@ tokH (x:xs) | x == "" = tokH xs
             | isUpper (head x) = (FuncName, x) : tokH xs
             | x == "true" = (TrueK, x)  : tokH xs
             | x == "false" = (FalseK, x) : tokH xs
-            | not (False `elem` (map isDigit x)) = (Integer, x) : tokH xs
+            | not (False `elem` (map (\y -> isDigit y || y =='-') x)) = (Integer, x) : tokH xs
             | head x == '\'' && head (reverse x) == '\'' && length x == 3 = (Character, x) : tokH xs
             | a /= Error = (a,b) : tokH xs
             | otherwise = (Idf, x) : tokH xs

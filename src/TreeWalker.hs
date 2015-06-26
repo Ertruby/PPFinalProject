@@ -3,6 +3,9 @@
 module TreeWalker where
 
 import Parse
+import Debug.Trace
+
+import Data.Int
 import Sprockell.System
 
 -- =========================================================================
@@ -15,40 +18,56 @@ import Sprockell.System
 -- TypeBool, Integer, TypeInt, Character, TypeChar, TrueK, FalseK, Incr, 
 -- VIA, DividedBy, FuncCall, Error, TypeNothing
 
-test99 = walkTree [toAST test0] [] 1
+test99 = walkTree [toAST test0] [] []
 
-walkTree:: [AST] -> [(String, Address)] -> Address -> [Instruction]
-walkTree [] _ _ = [EndProg]
-walkTree (n:ns) addrList addrC = case n of
+walkTree:: [AST] -> [(String, Address)] -> [(String, Target)] -> [Instruction]
+walkTree [] _ _ = []
+walkTree (n:ns) addrList funcList = case n of
     ASTNode Program [f,b]
-            -> walkTree [b] addrList addrC ++ walkTree ns addrList addrC
+            -> walkTree [b] addrList funcList ++ walkTree ns addrList funcList
     ASTNode ProgBody ls
-            -> walkTree ls addrList addrC ++ walkTree ns addrList addrC
-    ASTNode Decl [t,i]      
-            -> [Const 0 RegA, Store RegA (Addr addrC)] 
-                ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
-    ASTNode Decl [t,i,e]
-            -> (evalExpr [e] addrList RegA) ++ [Store RegA (Addr addrC)] 
-                ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
-    -- ASTNode Decl [t:i:e]      
-            -- -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
-                -- ++ walkTree ns ((getIdf i, addrC):addrList) (addrC+1)
+            -> walkTree ls addrList funcList ++ walkTree ns addrList funcList
+    -- ASTNode Task [(ASTNode FuncName [ASTLeaf s]):ls]
+            -- -> walkTree ls addrList ((s,Abs ):funcList) ++ walkTree ns addrList funcList
+    -- ASTNode FuncName [ASTLeaf s]
+            -- -> []
+    ASTNode Body ls
+            -> walkTree ls addrList funcList ++ walkTree ns addrList funcList
+    ASTNode When (e:b:os)
+            -> (evalExpr [e] addrList RegA) ++ [Const 1 RegB] ++ [Compute Xor RegA RegB RegA]
+                ++ [Const l RegB, Compute Add RegB PC RegB, Branch RegA (Ind RegB)] 
+                ++ bi ++ walkTree os addrList funcList ++ walkTree ns addrList funcList
+                where 
+                    bi = walkTree [b] addrList funcList
+                    l = fromIntegral ((length bi)+2 :: Int) :: Int32
+    ASTNode While [e,b]
+            -> [Compute Add PC Zero RegA, Push RegA] ++ (evalExpr [e] addrList RegA) 
+                ++ [Const 1 RegB] ++ [Compute Xor RegA RegB RegA]
+                ++ [Const l RegB, Compute Add RegB PC RegB, Branch RegA (Ind RegB)] 
+                ++ bi ++ [Pop RegA, Jump (Ind RegA)] ++ walkTree ns addrList funcList
+                where 
+                    bi = walkTree [b] addrList funcList
+                    l = fromIntegral ((length bi)+4 :: Int) :: Int32
+    ASTNode Decl (t:i:e)
+            | length e > 0 -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
+                            ++ walkTree ns ((getIdf i, addrC):addrList) funcList
+            | otherwise -> [Const 0 RegA] ++ [Store RegA (Addr addrC)] 
+                            ++ walkTree ns ((getIdf i, addrC):addrList) funcList
+                where 
+                    addrC = fromIntegral ((length addrList) :: Int) :: Int32      
     ASTNode Assign [i,e]
             -> (evalExpr [e] addrList RegA) 
-                ++ [Store RegA (Addr (head [addr | (i, addr) <- addrList]))]
-                ++ walkTree ns addrList addrC
+                ++ [Store RegA (Addr (head test))]
+                ++ walkTree ns addrList funcList
+                where
+                    test = [addr | (s, addr) <- addrList, s == getIdf i]
     _ -> error ("walkTree " ++ show n)
-
-regList = [RegA,RegB,RegC,RegD,RegE] 
-getNextReg:: [Reg] -> Reg -> Reg
-getNextReg (r:rs) t | r == t && length rs >= 1 = head rs
-                    | r /= t = getNextReg rs t
-                    | otherwise = regList!!0
 
 evalExpr:: [AST] -> [(String, Address)] -> Reg -> [Instruction]
 evalExpr (n:ns) addrList reg = case n of 
     ASTNode Expr [l,op,r]
-            -> evalExpr [l] addrList reg ++ evalExpr [r] addrList (getNextReg regList reg) ++ evalExpr [op] addrList reg
+            -> evalExpr [l] addrList reg ++ evalExpr [r] addrList (getNextReg regList reg) 
+                ++ evalExpr [op] addrList reg
     
     ASTNode Integer [ASTLeaf s] 
             -> [Const (read s :: Value) reg]
@@ -58,11 +77,10 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode Character [ASTLeaf s] 
             -> [Const (ord (head s)) reg]
     ASTNode Idf [ASTLeaf s] 
-            -> [Load (Addr (head [addr | (s, addr) <- addrList])) reg]
+            -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) reg]
             
     ASTLeaf op
-            -> [Compute (getOp opsStr ops op) RegA RegB reg]
-            
+            -> [Compute (getOp opsStr ops op) reg (getNextReg regList reg) reg]  
 
     ASTNode _ ls -- skips: Value, Expr with 1 child
             -> evalExpr ls addrList reg         
@@ -77,10 +95,15 @@ evalExpr (n:ns) addrList reg = case n of
                                     -- | s == "TypeBool" = TypeNothing
                                     -- | otherwise = error "fucktard"
                                     
+regList = [RegA,RegB,RegC,RegD,RegE] 
+getNextReg:: [Reg] -> Reg -> Reg
+getNextReg (r:rs) t | r == t && length rs >= 1 = head rs
+                    | r /= t = getNextReg rs t
+                    | otherwise = regList!!0
+                                    
 ops = [Add,Sub,Mul,Div,Mod,Equal,NEq,Gt,GtE,Lt,LtE,And,Or,Xor,LShift,RShift]
 opsStr = ["plus", "minus", "times", "DividedBy", "modulo", "equals", "notEquals", "GreaterThan",
         "GreaterThanEq", "SmallerThan", "SmallerThanEq", "and", "or", "Xor", "LShift", "RShift"]
-
 getOp :: [String] -> [Operator] -> String -> Operator
 getOp [] [] s = error "operator not found"
 getOp (x:xs) (y:ys) s   | s == x = y

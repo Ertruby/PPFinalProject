@@ -351,7 +351,19 @@ parse gr s tokens       | ptrees /= []  = head ptrees
 -- Informal expression: suppose boolean a is false.
 
 -- Corresponding tokenlist:
-tokenlist = tok "suppose [integer] b is [1,2,3]."
+tokenlist = tok "when 5 is greater than 3 do: suppose integer b is (3 plus 4) times (5 minus 2). suppose boolean c is false. b is 5 times (6 minus 3). stop."
+tkl = tok (": suppose boolean g is false."
+            ++"suppose integer i."
+            ++"when g do:"
+                ++"g is true."
+            ++"stop." 
+            ++"otherwise do:"
+                ++"i is 10."
+            ++"stop."
+            ++"while i is smaller than 7 do:"
+                ++"i is i plus 1."
+            ++"stop."
+            ++"stop.")
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
 programma1 = tok ("program Test:"
@@ -416,7 +428,7 @@ programma2 = tok ("program Test:"
     ++"stop.")
 
 -- test0 calculates the parse tree:
-test0 = parse grammar Decl tokenlist
+test0 = parse grammar Body tkl
 test1 = parse grammar Expr tokenlist2
 test2 = parse grammar Program programma1
 test3 = parse grammar Program programma2
@@ -482,7 +494,7 @@ isPNode :: ParseTree -> Bool
 isPNode (PNode _ _) = True
 isPNode x = False
 
-test12 = showRoseTree $ astToRose $ toAST test3
+test12 = showRoseTree $ astToRose $ toAST test0
 
 -- =========================================================
 -- type checking

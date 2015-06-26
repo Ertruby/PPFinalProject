@@ -503,9 +503,14 @@ isPNode x = False
 test12 = showRoseTree $ astToRose $ toAST test0
 
 -- =========================================================
--- type checking
+-- type checking.. also includes scope checking
 -- =========================================================
 test13 = typeCheckScope [toAST test3] []
+
+-- main function
+typeCheck :: AST -> AST -- supposed to take a Program node, works with more node types, but not all of them
+typeCheck t | typeCheckScope [t] [] = t -- success
+            | otherwise = error "error on typeCheck, typeCheckScope returned False. This should not be possible.."
 
 -- general type checker per scope
 typeCheckScope :: [AST] -> [(String, String)] -> Bool -- second argument (varList) should be empty when called by another function

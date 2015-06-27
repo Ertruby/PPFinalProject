@@ -367,6 +367,12 @@ tkl = tok (": suppose boolean g is false."
                 ++"i is i plus 1."
             ++"stop."
             ++"stop.")
+tsk = tok (": suppose integer k is 0."
+            ++ "task Stuff takes integer i and gives integer after:"
+                ++"i is 9."
+            ++"give i."
+            ++"k is Stuff(5,5)."
+            ++"stop.")
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
 programma1 = tok ("program Test:"
@@ -437,7 +443,7 @@ programma2 = tok ("program Test:"
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Body tkl
-test1 = parse grammar Expr tokenlist2
+test1 = parse grammar ProgBody tsk
 test2 = parse grammar Program programma1
 test3 = parse grammar Program programma2
 
@@ -492,6 +498,7 @@ toAST node = case node of
         (PNode ProgBody ts)             -> ASTNode ProgBody (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode While ts)                -> ASTNode While (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode Incr ts)                 -> ASTNode Incr (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
+        (PNode FuncCall ts)             -> ASTNode FuncCall (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode nt ts)                   -> ASTNode nt (map toAST ts)
 
 -- showing the AST
@@ -503,7 +510,7 @@ isPNode :: ParseTree -> Bool
 isPNode (PNode _ _) = True
 isPNode x = False
 
-test12 = showRoseTree $ astToRose $ toAST test3
+test12 = showRoseTree $ astToRose $ toAST test1
 
 -- =========================================================
 -- type checking.. also includes scope checking

@@ -34,6 +34,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | While
                 | Task                           
                 | Arg
+                | Args
                 | FuncName
                 | Body
                 | ProgLine
@@ -114,7 +115,9 @@ grammar nt = case nt of
                            
         While   -> [[while, Expr, doK, Body]]
                    
-        Task    -> [[task, FuncName, takes, Rep0[Arg], gives, Type, after, Body]]
+        Task    -> [[task, FuncName, takes, Args, gives, Type, after, Body]]
+        
+        Args    -> [[Rep0[Arg]]]
         
         Arg     -> [[Type, Idf, Alt [comma] [andK]]]
         
@@ -500,7 +503,7 @@ isPNode :: ParseTree -> Bool
 isPNode (PNode _ _) = True
 isPNode x = False
 
-test12 = showRoseTree $ astToRose $ toAST test0
+test12 = showRoseTree $ astToRose $ toAST test3
 
 -- =========================================================
 -- type checking.. also includes scope checking

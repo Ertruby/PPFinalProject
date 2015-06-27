@@ -20,17 +20,31 @@ import Sprockell.System
 
 test99 = walkTree [toAST test0] [] []
 
-walkTree:: [AST] -> [(String, Address)] -> [(String, Target)] -> [Instruction]
+walkTree:: [AST] -> [(String, Address)] -> [(String, ([Address],Target))] -> [Instruction]
 walkTree [] _ _ = []
 walkTree (n:ns) addrList funcList = case n of
     ASTNode Program [f,b]
             -> walkTree [b] addrList funcList ++ walkTree ns addrList funcList
     ASTNode ProgBody ls
             -> walkTree ls addrList funcList ++ walkTree ns addrList funcList
-    -- ASTNode Task [(ASTNode FuncName [ASTLeaf s]):ls]
-            -- -> walkTree ls addrList ((s,Abs ):funcList) ++ walkTree ns addrList funcList
-    -- ASTNode FuncName [ASTLeaf s]
-            -- -> []
+    ASTNode Task ls
+            | t /= TypeNothing -> ins ++ [Const 1 RegA, Compute Add RegA PC RegA]
+                    ++ walkTree [b] newAddrList newFuncList ++ [Pop RegB, Push RegA, Jump (Ind RegB)] 
+                    ++ walkTree ns newAddrList newFuncList
+            | otherwise -> ins ++ [Const 1 RegA, Compute Add RegA PC RegA]
+                    ++ walkTree [b] newAddrList newFuncList ++ [Pop RegB, Jump (Ind RegB)] 
+                    ++ walkTree ns newAddrList newFuncList
+                where
+                    newFuncList = ((s,([addr | (s, addr) <- argAddrList],Ind RegA)):funcList)
+                    newAddrList = (addrList ++ argAddrList)
+                    (ins, argAddrList) = handleArgs a (length addrList) ([],[])
+    ASTNode Arg [t,i]
+            -> [Const 0 RegA] ++ [Store RegA (Addr addrC)] 
+                            ++ walkTree ns ((getIdf i, addrC):addrList) funcList
+                where 
+                    addrC = fromIntegral ((length addrList) :: Int) :: Int32
+    ASTNode Idf [ASTLeaf s] -- Tasks give
+            -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) RegA]
     ASTNode Body ls
             -> walkTree ls addrList funcList ++ walkTree ns addrList funcList
     ASTNode When (e:b:os)
@@ -44,7 +58,7 @@ walkTree (n:ns) addrList funcList = case n of
             -> [Compute Add PC Zero RegA, Push RegA] ++ (evalExpr [e] addrList RegA) 
                 ++ [Const 1 RegB] ++ [Compute Xor RegA RegB RegA]
                 ++ [Const l RegB, Compute Add RegB PC RegB, Branch RegA (Ind RegB)] 
-                ++ bi ++ [Pop RegA, Jump (Ind RegA)] ++ walkTree ns addrList funcList
+                ++ bi ++ [Pop RegA, Jump (Ind RegA), Pop RegA] ++ walkTree ns addrList funcList
                 where 
                     bi = walkTree [b] addrList funcList
                     l = fromIntegral ((length bi)+4 :: Int) :: Int32
@@ -85,7 +99,18 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode _ ls -- skips: Value, Expr with 1 child
             -> evalExpr ls addrList reg         
     _ -> error ("evalExpr " ++ show n)
+
+handleTask:: [AST] -> [AST, [AST], AST, AST] -> [AST, [AST], AST, AST]
+handleTask (n:ns) [f, args, t, b] = case n of
+    ASTNode FuncName
     
+handleArgs:: [AST] -> Int -> ([Instruction],[(String, Address)]) -> ([Instruction],[(String, Address)])
+handleArgs [] _ res = res
+handleArgs (n:ns) l (i,addrList) = case n of
+    ASTNode Arg [t,i]
+            -> handleArgs ns (l+1) (i ++ [Const 0 RegA] ++ [Store RegA (Addr addrC)], ((getIdf i, addrC):addrList))
+                where 
+                    addrC = fromIntegral (l :: Int) :: Int32
      
 
 -- getType:: AST -> Alphabet

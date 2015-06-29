@@ -107,7 +107,8 @@ grammar nt = case nt of
                     
         Assign  -> [[Idf, is, Expr, dot]]
                     
-        FuncCall    ->  [[FuncName, lPar, Rep0 [Expr, Opt [comma]], rPar, Opt [dot]]]
+        FuncCall    ->  [[FuncName, lPar, Rep0 [Expr, Opt [comma]], rPar, Opt [dot]]
+                        ,[FuncName, lPar, Rep0 [Expr, Opt [comma]], rPar]]
                     
         Incr    -> [[inc, Idf, dot]]
         
@@ -129,9 +130,9 @@ grammar nt = case nt of
                     ,[VIA]]
                     
         VIA     -> [[Value]
+                    ,[FuncCall]
                     ,[Idf]
-                    ,[Array]
-                    ,[FuncCall]]
+                    ,[Array]]
                     
         Op      -> [[plus]
                     ,[minus]
@@ -364,14 +365,19 @@ tkl = tok (": suppose boolean g is false."
                 ++"i is 10."
             ++"stop."
             ++"while i is smaller than 7 do:"
-                ++"i is i plus 1."
+                ++"increment i."
             ++"stop."
             ++"stop.")
-tsk = tok (": suppose integer k is 0."
-            ++ "task Stuff takes integer i and gives integer after:"
-                ++"i is 9."
-            ++"give i."
-            ++"k is Stuff(5,5)."
+tsk = tok (": task Fib takes integer n and gives integer after:"
+                ++"suppose integer k."
+                ++"when (n equals 0) or (n equals 1) do:"
+                    ++"k is 1."
+                    ++"stop."
+                ++"otherwise do:"
+                    ++"k is Fib(n minus 1) plus Fib(n minus 2)."
+                    ++"stop."
+                ++"give k."
+            ++"suppose integer g is Fib(3)."
             ++"stop.")
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")

@@ -420,7 +420,7 @@ programma2 = tok ("program Test:"
             ++"suppose integer c is i plus j."
             ++"suppose [integer] o is [1,2,3]."
             ++"suppose [integer] k."
-            ++"a[0] is 5."
+            ++"a[true] is 5."
             ++"a[1] is c."
             ++"c is a[0] plus b."
             ++"Stuff(5)."
@@ -516,7 +516,7 @@ isPNode :: ParseTree -> Bool
 isPNode (PNode _ _) = True
 isPNode x = False
 
-test12 = showRoseTree $ astToRose $ toAST test1
+test12 = showRoseTree $ astToRose $ toAST test3
 
 -- =========================================================
 -- type checking.. also includes scope checking
@@ -534,11 +534,11 @@ typeCheckScope nodes varList = case nodes of
         []                                                                              -> True
         (t@(ASTNode Decl [_, _]):ts)                                                    -> typeCheckScope ts (makeTupleDecl varList t : varList)
         (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts)
-            | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> error ("length of array should be an integer --> " ++ show t) 
+            | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> error ("length of array should be an integer --> " ++ show (getPath (toAST test3) t [])) 
             | otherwise                                                                 -> typeCheckScope ts (makeTupleDecl varList (ASTNode Decl [tp,i]) : varList) 
         (t@(ASTNode Decl [tp, i, e]):ts)                                                -> typeCheckScope [ASTNode Assign [i,e]] newVarList && typeCheckScope ts newVarList where newVarList = makeTupleDecl varList (ASTNode Decl [tp,i]) : varList
         (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var, i]), expr]):ts) 
-            | iNotOke                                                                   -> error ("index of array should be an integer")
+            | iNotOke                                                                   -> error ("index of array should be an integer at line " ++ show (getLineNr (toAST test3) t))
             | notArray                                                                  -> error (show var ++ "is not an array")
             | elemType == actual                                                        -> typeCheckScope ts varList
             | otherwise                                                                 -> error (show var ++ " is array of " ++ elemType ++ " not of " ++ actual ++ "." )
@@ -690,9 +690,34 @@ getNodeType :: AST -> Alphabet
 getNodeType (ASTNode x _) = x
 
 -- get line nr for decent error throwing
---getLineNr :: AST -> AST -> Int 
+getPath :: AST -> AST -> [Int] -> [Int]
+getPath t@(ASTLeaf _) t2 path 
+        | t == t2 = path
+        | otherwise = []
+getPath t@(ASTNode _ []) t2 path = []
+getPath t@(ASTNode _ kids) t2 path 
+        | t == t2 = path
+        | pl == [] = []
+        | otherwise = pl !! 0
+        where
+            pl = filter (\x -> x /= []) [getPath (kids!!i) t2 (path ++ [i]) | i <- [0..((length kids)-1)]]
 
+countLinesAbove :: AST -> [Int] -> Int
+countLinesAbove t [] = 0
+countLinesAbove (ASTNode _ kids) (x:xs) = (sum (map countLines (take (x-1) kids)) ) + 1 + countLinesAbove (kids!!x) xs
 
+countLines :: AST -> Int
+countLines (ASTLeaf _) = 0
+countLines (ASTNode Decl _) = 1
+countLines (ASTNode Assign _) = 1 
+countLines (ASTNode FuncCall _) = 1
+countLines (ASTNode While kids) = sum (map countLines kids) 
+countLines (ASTNode When kids) = sum (map countLines kids) 
+countLines (ASTNode _ kids) = sum (map countLines kids)
+
+getLineNr :: AST -> AST -> Int
+getLineNr root t = countLinesAbove root (getPath root t [])
+            
 -- ==================================================
 -- ==================================================
 -- Clearly, you have to define your own embedded language for constrcuctions in your programming language.

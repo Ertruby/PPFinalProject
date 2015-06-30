@@ -532,8 +532,6 @@ typeCheck t | typeCheckScope [t] [] = t -- success
 typeCheckScope :: [AST] -> [(String, String)] -> Bool -- second argument (varList) should be empty when called by another function
 typeCheckScope nodes varList = case nodes of
         []                                                                              -> True
-        (t@(ASTNode Arg [_, _]):ts)                                                     -> typeCheckScope ts (makeTupleDecl varList t : varList)
-        
         (t@(ASTNode Decl [_, _]):ts)                                                    -> typeCheckScope ts (makeTupleDecl varList t : varList)
         (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts)
             | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> error ("length of array should be an integer --> " ++ show t) 
@@ -557,6 +555,7 @@ typeCheckScope nodes varList = case nodes of
                 expected    = getType varList t2
                 actual      = getAndCheckExpr varList expr
         (t@(ASTNode Program kids):ts)                                                   -> typeCheckScope kids (("#", "#"):varList)
+        (t@(ASTNode Args xs):ts)                                                        -> typeCheckScope ts ((map (makeTupleDecl varList) xs) ++ varList)
         (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids ((getGlobals kids)++varList) && typeCheckScope ts varList
         (t@(ASTNode Task kids):ts)                                                      -> typeCheckScope kids (("#", "#"):varList) && typeCheckScope ts varList
         (t@(ASTNode Body kids):ts)                                                      -> typeCheckScope kids varList && typeCheckScope ts varList
@@ -659,6 +658,7 @@ makeTupleTask t = error ("Node not supported in makeTupleTask --> " ++ show t)
 makeTupleTaskH :: [AST] -> (String, String) -> (String, String)
 makeTupleTaskH [] tuple = tuple
 makeTupleTaskH (ASTNode FuncName [ASTLeaf name]:ts) (n,tp) = makeTupleTaskH ts (name, tp)
+makeTupleTaskH (ASTNode Args kids:ts) tuple = makeTupleTaskH ts (makeTupleTaskH kids tuple)
 makeTupleTaskH (ASTNode Arg [ASTNode Type [ASTLeaf t], _]:ts) (n,tp) = makeTupleTaskH ts (n,tp ++ "," ++ t)
 makeTupleTaskH (ASTNode Type [ASTLeaf t]:ts) (n,tp) = makeTupleTaskH ts (n,t ++ tp)
 makeTupleTaskH (ASTNode Body kids:ts) (n,tp) 
@@ -670,6 +670,12 @@ makeTupleTaskH (ASTNode Body kids:ts) (n,tp)
             ok = actualR == expectedR
 makeTupleTaskH (t:ts) tuple = error ("Node not supported in makeTupleTaskH --> " ++ show t)
 
+makeTupleDecl :: [(String,String)] -> AST -> (String, String)
+makeTupleDecl varList (ASTNode _ [_, ASTNode Idf [ASTLeaf nameStr]]) | inSameScope varList nameStr = error ("variable " ++ nameStr ++ " is already defined in this scope")
+makeTupleDecl _ (ASTNode _ [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
+makeTupleDecl _ (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
+makeTupleDecl _ t = error ("Node not supported in makeTupleDecl --> " ++ show t)
+
 getReturnType :: [AST] -> String -- kids of the body of the task should go in here only
 getReturnType ts | getNodeType (head (reverse ts)) /= Idf = "TypeNothing"
 getReturnType (ASTNode Decl [ASTNode Type [ASTLeaf t], idf]:ts)
@@ -680,14 +686,12 @@ getReturnType (ASTNode Decl [ASTNode Type [ASTLeaf t], idf, _]:ts)
         | otherwise = getReturnType ts
 getReturnType (t:ts) = getReturnType ts -- not a decl
 
-makeTupleDecl :: [(String,String)] -> AST -> (String, String)
-makeTupleDecl varList (ASTNode _ [_, ASTNode Idf [ASTLeaf nameStr]]) | inSameScope varList nameStr = error ("variable " ++ nameStr ++ " is already defined in this scope")
-makeTupleDecl _ (ASTNode _ [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, typeStr)
-makeTupleDecl _ (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
-makeTupleDecl _ t = error ("Node not supported in makeTupleDecl --> " ++ show t)
-
 getNodeType :: AST -> Alphabet
 getNodeType (ASTNode x _) = x
+
+-- get line nr for decent error throwing
+--getLineNr :: AST -> AST -> Int 
+
 
 -- ==================================================
 -- ==================================================

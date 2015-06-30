@@ -18,7 +18,8 @@ walkTree (n:ns) addrList  = case n of
     ASTNode ProgBody ls
             -> walkTree ls addrList  ++ walkTree ns addrList 
     ASTNode Task [ASTNode FuncName [ASTLeaf s],ASTNode Args a,ASTNode Type [ASTLeaf t],b]
-            -> [Jump (Rel after)] ++ bodyInstr ++ walkTree ns newAddrList
+            -> [Const 3 RegA, Compute Add RegA PC RegA, Store RegA (Addr addrC), Jump (Rel after)] 
+                ++ bodyInstr ++ walkTree ns newAddrList
                 where
                     bodyInstr = ins ++ walkTree [b] bodyAddrList ++ pushRetValue
                     pushRetValue = if (t /= "TypeNothing") 
@@ -46,7 +47,7 @@ walkTree (n:ns) addrList  = case n of
                 where 
                     bi = walkTree [b] addrList 
                     obi = walkTree os addrList
-                    l = fromIntegral ((length bi)+2 :: Int) :: Int32
+                    l = fromIntegral ((length bi)+3 :: Int) :: Int32
                     skipOs = fromIntegral ((length obi)+1 :: Int) :: Int32
     ASTNode While [e,b]
             -> [Compute Add PC Zero RegA, Push RegA] ++ (evalExpr [e] addrList RegA) 

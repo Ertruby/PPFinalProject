@@ -1,0 +1,36 @@
+program Test1:
+        suppose [integer] a of length 5.
+        suppose integer herman is 5.
+        a is [5,-5,herman].
+        suppose integer c is H(5).
+        task Func takes boolean g, integer i and integer j and gives integer after:
+            suppose integer b is 10.
+            suppose integer c is i plus j.
+            suppose [integer] o is [1,2,3].
+            suppose [integer] k.
+            a[1] is 5.
+            a[1] is c.
+            c is a[0] plus b.
+            Stuff(5).
+            g is false.
+            suppose boolean h is true.
+            while h do:
+                increment b.
+                when b is greater than 20 do:
+                    h is false.
+                stop.
+            stop.
+            when g equals false do:
+                a[2] is a[0] times a[1].
+            stop.
+            otherwise do:
+                a[2] is b.
+            stop.
+        give c.
+        task Stuff takes integer i and gives nothing after:
+            a[1] is 9.
+        stop.
+        task H takes integer i and gives integer after:
+            suppose integer n is i plus 1.
+        give n.
+    stop.

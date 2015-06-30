@@ -379,6 +379,18 @@ tsk = tok (": task Fib takes integer n and gives integer after:"
                 ++"give k."
             ++"suppose integer g is Fib(3)."
             ++"stop.")
+fac = tok (": task Fac takes integer n and gives integer after:"
+                ++ "suppose integer k."
+                ++ "when n equals 1 do:"
+                    ++ "k is 1."
+                    ++ "stop."
+                ++ "otherwise do:"
+                    ++ "k is n times 2."
+                    ++ "stop."
+                ++ "give k."
+            ++ "suppose integer g is Fac(3)."
+            ++ "stop.")
+            
 tokenlist2 = tok ("((true and true) or (false and true))")
 tokenlist3 = tok ("task F takes boolean g, integer i and integer j and gives integer after: suppose integer b. btw, this is a comment. suppose integer b. stop.")
 programma1 = tok ("program Test:"
@@ -449,7 +461,7 @@ programma2 = tok ("program Test:"
 
 -- test0 calculates the parse tree:
 test0 = parse grammar Body tkl
-test1 = parse grammar ProgBody tsk
+test1 = parse grammar ProgBody fac
 test2 = parse grammar Program programma1
 test3 = parse grammar Program programma2
 

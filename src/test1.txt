@@ -8,11 +8,11 @@ program Test1:
             suppose integer c is i plus j.
             suppose [integer] o is [1,2,3].
             suppose [integer] k.
-            a[1] is 5.
+            a[1] is true.
             a[1] is c.
             c is a[0] plus b.
             Stuff(5).
-            g is false.
+            g is 5.
             suppose boolean h is true.
             while h do:
                 increment b.

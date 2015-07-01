@@ -1,0 +1,27 @@
+program Test0:
+    suppose integer a is 3.
+    task F takes boolean g, integer i and integer j and gives integer after:
+        suppose integer b. btw, this is a comment.
+        suppose integer c.
+        b is 10.
+        c is (a plus b) times 5.
+        a is 6.
+        suppose boolean h.
+        g is false.
+        h is false.
+        while a is greater than b do:
+            when (b is greater than 20) and (1 equals 1) do:
+                h is true.
+                stop.
+            stop.
+        when g equals false do: btw, this is the 'if'.
+            a is a plus 1.
+            a is a times b.
+            increment a.
+            stop.
+        otherwise do:
+            stop.
+    suppose integer ret is a.
+    give ret.
+    suppose integer x.
+    stop.

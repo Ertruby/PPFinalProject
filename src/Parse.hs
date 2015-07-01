@@ -352,6 +352,7 @@ parse gr s tokens       | ptrees /= []  = head ptrees
                         , rem == []
                         ]
 
+
 -- ==================================================
 -- For graphical representation, two variants of a toRoseTree function. Define your own to get a good view of the parsetree.
 -- First open standard_webpage.html

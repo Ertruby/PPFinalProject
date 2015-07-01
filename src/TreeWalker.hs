@@ -8,7 +8,7 @@ import Debug.Trace
 import Data.Int
 import Sprockell.System
 
-test99 = walkTree [toAST test1] []
+-- test99 = walkTree [toAST test1] []
 
 walkTree:: [AST] -> [(String, Address)] -> [Instruction]
 walkTree [] _ = []
@@ -59,12 +59,20 @@ walkTree (n:ns) addrList  = case n of
                     bi = walkTree [b] addrList 
                     l = fromIntegral ((length bi)+4 :: Int) :: Int32
     ASTNode Decl (t:i:e)
+            | checkTypeArray t && length e > 0 -> --traceShow ("success: \n" ++ show(e)) -- ++ "\n" ++ show(newAddrList) ++ "\n") 
+                arrayToIns e newAddrList (getIdf i)
+                ++ walkTree ns newAddrList
             | length e > 0 -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
-                            ++ walkTree ns ((getIdf i, addrC):addrList) 
+                ++ walkTree ns ((getIdf i, addrC):addrList) 
             | otherwise -> [Const 0 RegA] ++ [Store RegA (Addr addrC)] 
-                            ++ walkTree ns ((getIdf i, addrC):addrList) 
+                ++ walkTree ns ((getIdf i, addrC):addrList) 
                 where 
-                    addrC = fromIntegral ((length addrList) :: Int) :: Int32      
+                    addrC = fromIntegral ((length addrList) :: Int) :: Int32 
+                    arrayLength = getLength e 
+                    newAddrList = allocArray addrList (getIdf i) (arrayLength-1) 
+    ASTNode Assign [i,e@(ASTNode Expr [ASTNode Array _])]
+            -> arrayToIns [e] addrList (getIdf i)
+                ++ walkTree ns addrList 
     ASTNode Assign [i,e]
             -> (evalExpr [e] addrList RegA) 
                 ++ [Store RegA (Addr (head test))]
@@ -114,7 +122,21 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode _ ls -- skips: Value, Expr with 1 child
             -> evalExpr ls addrList reg
 
+--ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]    
+--[("o[0]",0),("o[1]",1),("o[2]",2),("c",3)]
+test12 = arrayToIns [ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]] [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)] "o"
             
+arrayToIns:: [AST] -> [(String, Address)] -> String -> [Instruction]    
+arrayToIns [ASTNode Array (l:ls)] addrList i 
+    | ls == [] = (evalExpr [l] addrList RegA) ++ [Store RegA (Addr addr)] 
+    | otherwise = (evalExpr [l] addrList RegA) ++ [Store RegA (Addr addr)] 
+                ++ arrayToIns [ASTNode Array ls] addrList i
+                where 
+                    addr = head [addr | (s, addr) <- addrList, s == idf]
+                    idf = i ++ "[" ++ show (length ls) ++ "]"
+                    -- addrC = fromIntegral ((length addrList) :: Int) :: Int32   
+arrayToIns [ASTNode Expr ls] addrList i = arrayToIns ls addrList i
+arrayToIns [ASTNode Value ls] _ _ = []                
             
             
 -- input = [Expr]            
@@ -129,7 +151,7 @@ popArgs ((ASTNode Arg [t,i]):ns) (ins,addrList)
     where 
         addrC = fromIntegral ((length addrList) :: Int) :: Int32
         
--- pushAddresses [("z",0),("a",1),("b",2),("c",3)]
+-- pushAddresses [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)]
 pushAddresses:: Address -> [Instruction]
 pushAddresses addrC 
     | addrC == 0 = [Load (Addr addrC) RegA, Push RegA]
@@ -139,6 +161,21 @@ popAddresses:: Address -> [Instruction]
 popAddresses addrC 
     | addrC == 0 = [Pop RegA, Store RegA (Addr addrC)]
     | otherwise = [Pop RegA, Store RegA (Addr addrC)] ++ popAddresses (addrC-1)  
+    
+allocArray:: [(String, Address)] -> String -> Int -> [(String, Address)]
+allocArray addrList idf i
+    | i == 0 = (idf ++ "[" ++ show(i) ++ "]", addrC):addrList
+    | otherwise = (idf ++ "[" ++ show(i) ++ "]", addrC):(allocArray addrList idf (i-1))
+    where 
+        addrC = fromIntegral ((length addrList)+i :: Int) :: Int32
+        
+checkTypeArray:: AST -> Bool
+checkTypeArray (ASTNode Type [ASTNode TypeArray _]) = True
+checkTypeArray _ = False
+
+getLength:: [AST] -> Int
+getLength [ASTNode Expr [ASTNode Array ls]] = length ls
+getLength [ASTNode Expr [ASTNode Value [ASTNode Integer [ASTLeaf n]]]] = read n :: Int
      
 -- setArgs:: [AST] -> [(String, Address)] -> [Address] -> [Instruction]
 -- setArgs [] _ [] = []

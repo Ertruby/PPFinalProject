@@ -1,0 +1,7 @@
+program Test2: task Fac takes integer n and gives nothing after:
+    suppose [integer] o is [1,2,3].
+    suppose [integer] k of length 5.
+    k is [1,2,3,4,5].
+    stop.
+Fac(3).
+stop.

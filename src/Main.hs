@@ -5,6 +5,7 @@ import Prelude
 import System.IO
 import Parse (parse0, showAST)
 import Checker (check, countLines)
+import TreeWalker
 
 
 compile :: FilePath -> IO()
@@ -14,7 +15,9 @@ compile input = do
         contents <- hGetContents h
         let ast = parse0 contents
         let checked = check ast
-        putStr "No code generation yet.. \n"
+        let instr = walkTree [ast] []
+        -- putStr (show(ast))
+        putStr ("Instructions: \n" ++ show(instr) ++ "\n")
         putStr "Compiling done!\n"
         putStr ("Number of lines compiled: " ++ show (Checker.countLines checked) ++ "\n")
         

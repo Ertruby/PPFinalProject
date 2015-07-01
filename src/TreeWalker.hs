@@ -30,11 +30,12 @@ walkTree (n:ns) addrList  = case n of
                     addrC = fromIntegral ((length addrList) :: Int) :: Int32 
                     newAddrList = (s,addrC):addrList 
     ASTNode FuncCall (ASTNode FuncName [ASTLeaf f]:args)
-            -> [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
+            -> pushAddresses addrC ++ [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
                 ++ [Load (Addr (head [addr | (i, addr) <- addrList, f == i])) RegA, Jump (Ind RegA)]
-                ++ walkTree ns addrList
+                ++ popAddresses addrC ++ walkTree ns addrList
                 where
                     ins = pushArgs args addrList
+                    addrC = fromIntegral ((length addrList) :: Int) :: Int32 
                     retAddr = fromIntegral ((length ins) + 4 :: Int) :: Int32 
     ASTNode Idf [ASTLeaf s] -- Tasks give
             -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) RegA]
@@ -99,12 +100,13 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode Idf [ASTLeaf s] 
             -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) reg]
     ASTNode FuncCall (ASTNode FuncName [ASTLeaf f]:args)
-            -> [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
+            -> pushAddresses addrC ++ [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
                 ++ [Load (Addr (head [addr | (i, addr) <- addrList, f == i])) RegA, Jump (Ind RegA)]
-                ++ [Pop reg]
+                ++ popAddresses addrC ++ [Pop reg]
                 where
                     ins = pushArgs args addrList
                     retAddr = fromIntegral ((length ins) + 4 :: Int) :: Int32 
+                    addrC = fromIntegral ((length addrList) :: Int) :: Int32
             
     ASTLeaf op
             -> [Compute (getOp opsStr ops op) reg (getNextReg regList reg) reg]  
@@ -126,6 +128,17 @@ popArgs ((ASTNode Arg [t,i]):ns) (ins,addrList)
     = popArgs ns (ins ++ [Pop RegA, Store RegA (Addr addrC)], ((getIdf i, addrC):addrList))
     where 
         addrC = fromIntegral ((length addrList) :: Int) :: Int32
+        
+-- pushAddresses [("z",0),("a",1),("b",2),("c",3)]
+pushAddresses:: Address -> [Instruction]
+pushAddresses addrC 
+    | addrC == 0 = [Load (Addr addrC) RegA, Push RegA]
+    | otherwise = [Load (Addr addrC) RegA, Push RegA] ++ pushAddresses (addrC-1) 
+    
+popAddresses:: Address -> [Instruction]
+popAddresses addrC 
+    | addrC == 0 = [Pop RegA, Store RegA (Addr addrC)]
+    | otherwise = [Pop RegA, Store RegA (Addr addrC)] ++ popAddresses (addrC-1)  
      
 -- setArgs:: [AST] -> [(String, Address)] -> [Address] -> [Instruction]
 -- setArgs [] _ [] = []

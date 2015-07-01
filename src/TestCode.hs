@@ -151,23 +151,99 @@ prog3 = [
         ,Load (Addr 0) RegA
         ,Jump (Ind RegA)
         ,Pop RegA
-        ,Store RegA (Addr 1),Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop
+        ,Store RegA (Addr 1)
+        ,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop
+        ,EndProg]
+        
+        
+prog4:: [Instruction]
+prog4 = [
+        Const 3 RegA
+        ,Compute Add RegA PC RegA
+        ,Store RegA (Addr 0)
+        ,Jump (Rel 49)                      -- skip task: 213
+        ,Pop RegA
+        ,Store RegA (Addr 1)                -- arg n: 3, 2, 1
+        ,Const 0 RegA
+        ,Store RegA (Addr 2)                -- k = 0
+        ,Load (Addr 1) RegA
+        ,Const 1 RegB
+        ,Compute Equal RegA RegB RegA
+        ,Const 1 RegB
+        ,Compute Xor RegA RegB RegA
+        ,Const 5 RegB
+        ,Compute Add RegB PC RegB
+        ,Branch RegA (Ind RegB)             -- branch to 180 if false
+        ,Const 1 RegA
+        ,Store RegA (Addr 2)                -- k = 1
+        ,Jump (Rel 30)                      -- jump to 209    
+        ,Load (Addr 3) RegA                 -- ,Load (Addr 1) RegA was before here
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                          -- push known addresses
+        ,Const 8 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                          -- push return address 197
+        ,Load (Addr 1) RegA
+        ,Const 1 RegB
+        ,Compute Sub RegA RegB RegA
+        ,Push RegA                          -- push arg n-1
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                    -- jump to task
+        ,Pop RegB
+        ,Pop RegA
+        ,Store RegA (Addr 3)
+        ,Pop RegA
+        ,Store RegA (Addr 2)
+        ,Pop RegA
+        ,Store RegA (Addr 1)
+        ,Pop RegA
+        ,Store RegA (Addr 0)
+        ,Load (Addr 1) RegA
+        ,Compute Mul RegA RegB RegA     -- n * return value: 2*1, 3*2   
+        ,Store RegA (Addr 2)            -- k: 2,6
+        ,Load (Addr 2) RegA             -- after otherwise
+        ,Pop RegB                       -- pop return address
+        ,Push RegA                      -- push return value
+        ,Jump (Ind RegB)                -- jump to return address
+        ,Load (Addr 1) RegA             -- after task
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                      -- push known addresses    
+        ,Const 6 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 224
+        ,Const 3 RegA
+        ,Push RegA                      -- push arg 3
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to task
+        ,Pop RegB
+        ,Store RegA (Addr 1)
+        ,Pop RegA
+        ,Store RegA (Addr 0)
+        ,Pop RegA
+        ,Store RegB (Addr 1)
+        ,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop,Nop
         ,EndProg]
  
  
 debug :: SystemState -> String
-debug SysState{..}  | (localMem (sprs !! 0) !!! 1) == 3 = "Second shared memaddr equals 3.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 1 = "Second shared memaddr equals 1.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 2 = "Second shared memaddr equals 2.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 4 = "Second shared memaddr equals 4.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 5 = "Second shared memaddr equals 5.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 6 = "Second shared memaddr equals 6.\n"
-                    | (localMem (sprs !! 0) !!! 1) == 0 = "Second shared memaddr equals 0.\n"
+debug SysState{..}  | (localMem (sprs !! 0) !!! 2) == 3 = "Second shared memaddr equals 3.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 1 = "Second shared memaddr equals 1.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 2 = "Second shared memaddr equals 2.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 4 = "Second shared memaddr equals 4.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 5 = "Second shared memaddr equals 5.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 6 = "Second shared memaddr equals 6.\n"
+                    | (localMem (sprs !! 0) !!! 2) == 0 = "Second shared memaddr equals 0.\n"
                     
                     
                     
-                    -- | (localMem (sprs !! 0) !!! 1) == 0 = "Second shared memaddr equals 0.\n"
+                    -- | (localMem (sprs !! 0) !!! 2) == 0 = "Second shared memaddr equals 0.\n"
                     
 debug _ = "Nope\n"
 
-main = runDebug debug 1 prog3
+main = runDebug debug 1 prog4

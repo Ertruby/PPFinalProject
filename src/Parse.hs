@@ -370,6 +370,12 @@ toRoseTree1 t = case t of
 -- ============================================
 -- building the AST
 -- ============================================
+-- comment on the AST:
+-- We should have defined a completely different AST, so that there is a different type of AST node 
+-- for each possibility of what is in it and its sub trees (i.e. a type for declerations, a type for 
+-- declerations with an assignment, a type for an assignment, and so on).
+-- If we would have done that, it would be a lot easier to pattern match and also a lot more compact.
+-- Sadly when we tought of this (remembered this) it was too late to change it.
 
 data AST = ASTNode Alphabet [AST] | ASTLeaf String deriving (Show, Eq)
 

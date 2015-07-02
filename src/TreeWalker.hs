@@ -10,6 +10,10 @@ import Sprockell.System
 
 -- test99 = walkTree [toAST test1] []
 
+writeToFile:: [AST] -> String -> String 
+writeToFile ast s = "{-# LANGUAGE RecordWildCards #-} \nmodule Output." ++ s ++ " where \nimport Sprockell.System\n"
+    ++ "prog:: [Instruction] \nprog = " ++ show ((walkTree ast []) ++ [EndProg]) ++ "\nmain = run 1 prog >> putChar '\\n'"
+
 walkTree:: [AST] -> [(String, Address)] -> [Instruction]
 walkTree [] _ = []
 walkTree (n:ns) addrList  = case n of

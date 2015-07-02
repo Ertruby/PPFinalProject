@@ -62,7 +62,7 @@ typeCheckScope nodes varList = case nodes of
         (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var]), expr]):ts)
             | isPrefixOf "ERR" expected                                                 -> (t,drop 3 expected) : typeCheckScope ts varList
             | expected == actual || actual == "TypeEmpty"                               -> typeCheckScope ts varList
-            | otherwise                                                                 -> (t,show var ++ " is of " ++ expected ++ " not " ++ actual ++ ". --> " ) : typeCheckScope ts varList
+            | otherwise                                                                 -> (t,show var ++ " is of " ++ expected ++ " not " ++ actual ++ "." ) : typeCheckScope ts varList
             where 
                 expected    = getType varList t2
                 actual      = getAndCheckExpr varList expr
@@ -123,10 +123,10 @@ getAndCheckExpr varList node = case node of
             | show t == "Boolean"                                   -> "TypeBool"
             | show t == "Integer"                                   -> "TypeInt"
             | otherwise                                             -> error ("type not recognized at getAndCheckExpr: " ++ show t)
-        (ASTNode FuncCall (name:args))
+        (ASTNode FuncCall (name@(ASTNode FuncName [ASTLeaf n]):args))
             | typErr                                                -> typ
             | argsOk                                                -> returnType
-            | otherwise                                             -> ("ERRTask " ++ show name ++ " takes arguments of type " ++ show argTypes0 ++", not of type " ++ show argTypes1)
+            | otherwise                                             -> ("ERRTask " ++ n ++ " takes arguments of type " ++ show argTypes0 ++", not of type " ++ show argTypes1)
             where
                 typ             = getType varList node
                 typErr          = isPrefixOf "ERR" typ

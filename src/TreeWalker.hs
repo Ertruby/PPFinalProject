@@ -77,6 +77,14 @@ walkTree (n:ns) addrList  = case n of
     ASTNode Assign [i,e@(ASTNode Expr [ASTNode Array _])]
             -> arrayToIns [e] addrList (getIdf i)
                 ++ walkTree ns addrList 
+    ASTNode Assign [ASTNode Idf [ASTLeaf i, ex@(ASTNode Expr _)],e]
+            -> evalExpr [ex] addrList RegA ++ evalExpr [e] addrList RegC 
+                ++ [Const addrC RegB, Compute Add RegA RegB RegA, Store RegC (Deref RegA)]
+                ++ walkTree ns addrList 
+                where
+                    addrC = fromIntegral (test :: Int32) :: Value
+                    test = head [addr | (s, addr) <- addrList, s == str]
+                    str = i ++ "[" ++ show(0) ++ "]"
     ASTNode Assign [i,e]
             -> (evalExpr [e] addrList RegA) 
                 ++ [Store RegA (Addr (head test))]
@@ -108,9 +116,17 @@ evalExpr (n:ns) addrList reg = case n of
             | s == "true" -> [Const 1 reg]
             | otherwise -> [Const 0 reg]
     ASTNode Character [ASTLeaf s] 
-            -> [Const (ord (head s)) reg]
+            -> [Const (ord (head s)) reg] 
     ASTNode Idf [ASTLeaf s] 
             -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) reg]
+    ASTNode Idf [ASTLeaf i, e]
+            -> evalExpr [e] addrList reg1 
+                ++ [Const addrC reg, Compute Add reg1 reg reg1, Load (Deref reg1) reg]
+                where
+                    reg1 = getNextReg regList reg
+                    addrC = fromIntegral (test :: Int32) :: Value
+                    test = head [addr | (s, addr) <- addrList, s == str]
+                    str = i ++ "[" ++ show(0) ++ "]"
     ASTNode FuncCall (ASTNode FuncName [ASTLeaf f]:args)
             -> pushAddresses addrC ++ [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
                 ++ [Load (Addr (head [addr | (i, addr) <- addrList, f == i])) RegA, Jump (Ind RegA)]
@@ -201,10 +217,10 @@ ops = [Add,Sub,Mul,Div,Mod,Equal,NEq,Gt,GtE,Lt,LtE,And,Or,Xor,LShift,RShift]
 opsStr = ["plus", "minus", "times", "DividedBy", "modulo", "equals", "notEquals", "GreaterThan",
         "GreaterThanEq", "SmallerThan", "SmallerThanEq", "and", "or", "Xor", "LShift", "RShift"]
 getOp :: [String] -> [Operator] -> String -> Operator
-getOp [] [] s = error "operator not found"
+getOp [] [] s = error ("operator not found" ++ show(s))
 getOp (x:xs) (y:ys) s   | s == x = y
                         | otherwise = getOp xs ys s
                                     
 getIdf:: AST -> String
 getIdf (ASTNode Idf [ASTLeaf s]) = s
-getIdf _ = error "getIdf"
+getIdf n = error ("getIdf" ++ show(n))

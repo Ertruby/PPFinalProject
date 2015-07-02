@@ -2,17 +2,18 @@ program Test1:
         suppose [integer] a of length 5.
         suppose integer herman is 5.
         a is [5,-5,herman].
-        suppose integer c is H(5).
+        task Stuff takes integer i and gives nothing after:
+            a[1] is 9.
+        stop.
         task Func takes boolean g, integer i and integer j and gives integer after:
             suppose integer b is 10.
             suppose integer c is i plus j.
             suppose [integer] o is [1,2,3].
             suppose [integer] k.
-            a[1] is true.
+            a[1] is 2.
             a[1] is c.
-            c is a[0] plus b.
             Stuff(5).
-            g is 5.
+            g is false.
             suppose boolean h is true.
             while h do:
                 increment b.
@@ -26,11 +27,10 @@ program Test1:
             otherwise do:
                 a[2] is b.
             stop.
-        give c.
-        task Stuff takes integer i and gives nothing after:
-            a[1] is 9.
-        stop.
+        give b.
         task H takes integer i and gives integer after:
             suppose integer n is i plus 1.
         give n.
+        suppose integer c is H(herman).
+
     stop.

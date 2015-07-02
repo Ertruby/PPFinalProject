@@ -73,12 +73,12 @@ typeCheckScope nodes varList = case nodes of
             where
                 tups = (map (makeTupleDecl varList) xs)
                 tups2 = filter (\(a,b) -> a == "ERR") tups
-        (t@(ASTNode ProgBody kids):ts) 
-            | errs /= []                                                                -> map (\(a,b) -> (t,b)) errs ++ typeCheckScope ts varList
-            | otherwise                                                                 -> typeCheckScope kids ((getGlobals kids)++varList) ++ typeCheckScope ts varList
+        (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids varList ++ typeCheckScope ts varList
+        (t@(ASTNode Task kids):ts)   
+            | fst newTup == "ERR"                                                       -> (t,snd newTup) : typeCheckScope ts varList
+            | otherwise                                                                 -> typeCheckScope kids (("#", "#"):varList) ++ typeCheckScope ts (newTup : varList)
             where
-                errs = filter (\(a,b) -> a == "ERR") (getGlobals kids)
-        (t@(ASTNode Task kids):ts)                                                      -> typeCheckScope kids (("#", "#"):varList) ++ typeCheckScope ts varList
+                newTup = makeTupleTask t
         (t@(ASTNode Body kids):ts)                                                      -> typeCheckScope kids varList ++ typeCheckScope ts varList
         (t@(ASTNode While [condition, body]):ts) 
             | (getAndCheckExpr varList condition) /= "TypeBool"                         -> (t,"While statement should contain a boolean expression") : typeCheckScope ts varList

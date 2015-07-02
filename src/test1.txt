@@ -2,11 +2,18 @@ program Test1:
         suppose [integer] a of length 5.
         suppose integer herman is 5.
         a is [5,-5,herman].
+        
         task Stuff takes integer i and gives nothing after:
             a[1] is 9.
         stop.
+        
+        task H takes integer i and gives integer after:
+            suppose integer n is i plus 1.
+        give n.
+        
         task Func takes boolean g, integer i and integer j and gives integer after:
             suppose integer b is 10.
+            suppose [integer] a of length 5.
             suppose integer c is i plus j.
             suppose [integer] o is [1,2,3].
             suppose [integer] k.
@@ -28,9 +35,6 @@ program Test1:
                 a[2] is b.
             stop.
         give b.
-        task H takes integer i and gives integer after:
-            suppose integer n is i plus 1.
-        give n.
+        
         suppose integer c is H(herman).
-
     stop.

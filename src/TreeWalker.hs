@@ -36,7 +36,7 @@ walkTree (n:ns) addrList  = case n of
     ASTNode FuncCall (ASTNode FuncName [ASTLeaf f]:args)
             -> pushAddresses addrC ++ [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
                 ++ [Load (Addr (head [addr | (i, addr) <- addrList, f == i])) RegA, Jump (Ind RegA)]
-                ++ popAddresses addrC ++ walkTree ns addrList
+                ++ popAddresses addrC RegA ++ walkTree ns addrList
                 where
                     ins = pushArgs args addrList
                     addrC = fromIntegral ((length addrList) :: Int) :: Int32 
@@ -63,8 +63,8 @@ walkTree (n:ns) addrList  = case n of
                     bi = walkTree [b] addrList 
                     l = fromIntegral ((length bi)+4 :: Int) :: Int32
     ASTNode Decl (t:i:e)
-            | checkTypeArray t && length e > 0 -> --traceShow ("success: \n" ++ show(e)) -- ++ "\n" ++ show(newAddrList) ++ "\n") 
-                arrayToIns e newAddrList (getIdf i)
+            | checkTypeArray t && length e > 0 -> --traceShow ("success: \n" ++ show(newAddrList) ++ "\n") 
+                arrayToIns e newAddrList (getIdf i) arrayLength
                 ++ walkTree ns newAddrList
             | length e > 0 -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
                 ++ walkTree ns ((getIdf i, addrC):addrList) 
@@ -75,7 +75,7 @@ walkTree (n:ns) addrList  = case n of
                     arrayLength = getLength e 
                     newAddrList = allocArray addrList (getIdf i) (arrayLength-1) 
     ASTNode Assign [i,e@(ASTNode Expr [ASTNode Array _])]
-            -> arrayToIns [e] addrList (getIdf i)
+            -> arrayToIns [e] addrList (getIdf i) (getLength [e])
                 ++ walkTree ns addrList 
     ASTNode Assign [ASTNode Idf [ASTLeaf i, ex@(ASTNode Expr _)],e]
             -> evalExpr [ex] addrList RegA ++ evalExpr [e] addrList RegC 
@@ -130,7 +130,7 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode FuncCall (ASTNode FuncName [ASTLeaf f]:args)
             -> pushAddresses addrC ++ [Const retAddr RegA, Compute Add RegA PC RegA, Push RegA] ++ ins 
                 ++ [Load (Addr (head [addr | (i, addr) <- addrList, f == i])) RegA, Jump (Ind RegA)]
-                ++ popAddresses addrC ++ [Pop reg]
+                 ++ [Pop reg] ++ popAddresses addrC (getNextReg regList reg) 
                 where
                     ins = pushArgs args addrList
                     retAddr = fromIntegral ((length ins) + 4 :: Int) :: Int32 
@@ -144,19 +144,19 @@ evalExpr (n:ns) addrList reg = case n of
 
 --ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]    
 --[("o[0]",0),("o[1]",1),("o[2]",2),("c",3)]
-test12 = arrayToIns [ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]] [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)] "o"
+test12 = arrayToIns [ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]] [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)] "o" 3
             
-arrayToIns:: [AST] -> [(String, Address)] -> String -> [Instruction]    
-arrayToIns [ASTNode Array (l:ls)] addrList i 
+arrayToIns:: [AST] -> [(String, Address)] -> String -> Int ->[Instruction]    
+arrayToIns [ASTNode Array v@(l:ls)] addrList i size
     | ls == [] = (evalExpr [l] addrList RegA) ++ [Store RegA (Addr addr)] 
     | otherwise = (evalExpr [l] addrList RegA) ++ [Store RegA (Addr addr)] 
-                ++ arrayToIns [ASTNode Array ls] addrList i
+                ++ arrayToIns [ASTNode Array ls] addrList i size
                 where 
                     addr = head [addr | (s, addr) <- addrList, s == idf]
-                    idf = i ++ "[" ++ show (length ls) ++ "]"
+                    idf = i ++ "[" ++ show (size - length v) ++ "]"
                     -- addrC = fromIntegral ((length addrList) :: Int) :: Int32   
-arrayToIns [ASTNode Expr ls] addrList i = arrayToIns ls addrList i
-arrayToIns [ASTNode Value ls] _ _ = []                
+arrayToIns [ASTNode Expr ls] addrList i size = arrayToIns ls addrList i size
+arrayToIns [ASTNode Value ls] _ _ _ = []                
             
             
 -- input = [Expr]            
@@ -177,10 +177,10 @@ pushAddresses addrC
     | addrC == 0 = [Load (Addr addrC) RegA, Push RegA]
     | otherwise = [Load (Addr addrC) RegA, Push RegA] ++ pushAddresses (addrC-1) 
     
-popAddresses:: Address -> [Instruction]
-popAddresses addrC 
-    | addrC == 0 = [Pop RegA, Store RegA (Addr addrC)]
-    | otherwise = [Pop RegA, Store RegA (Addr addrC)] ++ popAddresses (addrC-1)  
+popAddresses:: Address -> Reg -> [Instruction]
+popAddresses addrC reg
+    | addrC == 0 = [Pop reg, Store reg (Addr addrC)]
+    | otherwise = [Pop reg, Store reg (Addr addrC)] ++ popAddresses (addrC-1) reg 
     
 allocArray:: [(String, Address)] -> String -> Int -> [(String, Address)]
 allocArray addrList idf i

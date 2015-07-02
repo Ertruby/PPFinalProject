@@ -95,16 +95,17 @@ grammar nt = case nt of
 
         Program -> [[prog, FuncName, ProgBody]]
         
-        ProgBody    -> [[semi, Rep0 [ProgLine], stop, dot]]
+        ProgBody    -> [[semi, Rep0 [Line], stop, dot]]
         
-        ProgLine    -> [[Alt [Task] [Line]]]
+        -- ProgLine    -> [[Line]]
         
         Line    -> [[Decl]
                     ,[Assign]
                     ,[FuncCall]
                     ,[Incr]
                     ,[When]
-                    ,[While]]
+                    ,[While]
+                    ,[Task]]
 
         Decl    -> [[suppose, Opt [global], Type, Idf, Alt [ofK, lengthK, Expr] [Opt [is, Expr]], dot]]
                     

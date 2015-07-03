@@ -15,6 +15,7 @@ import TestOutcomes
 -- gwn de ast printen en in de 'testOutCome.hs' poten als variabele
 -- om de ast te krijgen gebruik die comment achter de if ipv de if statement
 -- zo is t redelijk te doen, gwn 1 file waar alles in zit, dan 1 of 2 met een paar foutjes zoals een punt die mist.
+-- VERWIJDER DEZE COMMENT !!
 
 testWrong = testSyntax "Input/DeclAssignTest.txt" testOWrong
 synTest1 = testSyntax "Input/DeclAssignTest.txt" testO1

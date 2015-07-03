@@ -1,6 +1,7 @@
 module Main where
 
 import System.IO
+import System.FilePath
 import Parse (parse0, showAST)
 import Checker (check, countLines)
 import TreeWalker (writeToFile)
@@ -15,8 +16,8 @@ compile input = do
         let ast = parse0 contents
         check ast
         let fileNameP = if isSuffixOf ".txt" input
-                        then take ((length input)-4) input
-                        else input
+                        then take ((length input)-4) (takeFileName input)
+                        else takeFileName input
         let fileName = [toUpper (head fileNameP)] ++ tail fileNameP
         outh <- openFile ("Output/" ++ fileName ++ ".hs") WriteMode
         hPutStrLn  outh (writeToFile [ast] fileName)

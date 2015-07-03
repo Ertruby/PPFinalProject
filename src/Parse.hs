@@ -1,264 +1,22 @@
 {-# LANGUAGE FlexibleInstances #-}
-
 module Parse where
 
-
-import Debug.Trace
-import Data.List
 import FPPrac.Trees
-import Prelude
+import DataTypesEtc
 import Data.Char
+import Grammar
 import qualified Data.Maybe
 import qualified Data.Text as TXT
-
 
 parse0 :: String -> AST
 parse0 str = toAST $ parse grammar Program (tok str)
 
--- Embedded language for alphabet:
-data Alphabet =   Symbol     String             -- Token given ("char" specific for this example)
-                | Keyword    String             -- A given string, but included in the parsetree
-                | SyntCat    Alphabet           -- A given string, but included in the parsetree
-                | CheckChar  (Char->Bool)       -- Character should have some property (for tokenizer)
-                | CheckToken (Token->Bool)      -- Token should have some property (for parser)
-
-                | Alt   [Alphabet] [Alphabet]   -- Try both
-                | Try   [Alphabet] [Alphabet]   -- If first doesn't work, try second
-                | Opt   [Alphabet]              -- Optional
-                | Rep0  [Alphabet]              -- Zero or more repetitions
-                | Rep1  [Alphabet]              -- One or more repetitions
-
-                -- Non-terminals
-                | Program                       
-                | ProgBody                       
-                | Decl                     
-                | Assign
-                | When
-                | While
-                | Task                           
-                | Arg
-                | Args
-                | FuncName
-                | Body
-                | ProgLine
-                | Line
-                | Expr
-                | ExprH
-                | Op
-                | GreaterThan
-                | GreaterThanEq
-                | SmallerThan
-                | SmallerThanEq
-                | Type
-                | Idf
-                | Value
-                | Array
-                | ArrayVal
-                | TypeArray
-                | Boolean
-                | TypeBool
-                | Integer
-                | TypeInt
-                | Character
-                | TypeChar
-                | TrueK
-                | FalseK
-                | Incr
-                | VIA
-                | DividedBy
-                | FuncCall
-                | Error
-                | TypeNothing
-                deriving (Eq,Show)
-
-
--- functions for shorthand notation for EBNF constructions
-ps <>  qs = Alt  ps qs
-ps <<> qs = Try  ps qs
-(?>) ps   = Opt  ps
-(*>) ps   = Rep0 ps
-(+>) ps   = Rep1 ps
-
--- "Hack"
-instance Eq   (Char  -> Bool) where f == g = True       -- These instances are a hack, since otherwise "deriving (Eq,Show)"
-instance Eq   (Token -> Bool) where f == g = True       --      for Alphabet won't work.
-instance Show (Char  -> Bool) where show f = ""         -- Just make sure you never apply (==) or show to function types.
-instance Show (Token -> Bool) where show f = ""
-
 -- ==========================================================================================================
 
-type Grammar = Alphabet -> [[Alphabet]]
-
-grammar :: Grammar
-
-grammar nt = case nt of
-
-        Program -> [[prog, FuncName, ProgBody]]
-        
-        ProgBody    -> [[semi, Rep0 [ProgLine], stop, dot]]
-        
-        ProgLine    -> [[Alt [Task] [Line]]]
-        
-        Line    -> [[Decl]
-                    ,[Assign]
-                    ,[FuncCall]
-                    ,[Incr]
-                    ,[When]
-                    ,[While]]
-
-        Decl    -> [[suppose, Opt [global], Type, Idf, Alt [ofK, lengthK, Expr] [Opt [is, Expr]], dot]]
-                    
-        Assign  -> [[Idf, is, Expr, dot]]
-                    
-        FuncCall    ->  [[FuncName, lPar, Rep0 [Expr, Opt [comma]], rPar, Opt [dot]]
-                        ,[FuncName, lPar, Rep0 [Expr, Opt [comma]], rPar]]
-                    
-        Incr    -> [[inc, Idf, dot]]
-        
-        When    -> [[when, Expr, doK, Body, Opt [otherwiseK, doK, Body]]]
-                           
-        While   -> [[while, Expr, doK, Body]]
-                   
-        Task    -> [[task, FuncName, takes, Args, gives, Type, after, Body]]
-        
-        Args    -> [[Rep0[Arg]]]
-        
-        Arg     -> [[Type, Idf, Alt [comma] [andK]]]
-        
-        Body    -> [[semi, Rep0 [Line], Alt [stop, dot] [give, VIA, dot]]]
-                    
-        Expr    -> [[VIA, Op, Expr]
-                    ,[lPar, Expr, rPar, Op, Expr]
-                    ,[lPar, Expr, rPar]
-                    ,[VIA]]
-                    
-        VIA     -> [[Value]
-                    ,[FuncCall]
-                    ,[Idf]
-                    ,[Array]]
-                    
-        Op      -> [[plus]
-                    ,[minus]
-                    ,[times]
-                    ,[DividedBy]
-                    ,[equals]
-                    ,[is]
-                    ,[GreaterThan]
-                    ,[GreaterThanEq]
-                    ,[SmallerThan]
-                    ,[SmallerThanEq]
-                    ,[andK]
-                    ,[orK]]
-        
-        DividedBy   -> [[divided, by]]
-        GreaterThan -> [[is, greater, than]]
-        GreaterThanEq -> [[is, greater, than, orK, equal, to]]
-        SmallerThan -> [[is, smaller, than]]
-        SmallerThanEq -> [[is, smaller, than, orK, equal, to]]
-        
-        FuncName -> [[funcName]]
-        
-        Type    -> [[TypeBool]
-                   ,[TypeInt]
-                   ,[TypeChar]
-                   ,[TypeArray]
-                   ,[TypeNothing]]
-        
-        Idf     -> [[idf, Opt [lBracket, Expr, rBracket]]]
-                   
-        Value   -> [[Boolean]
-                   ,[Integer]
-                   ,[Character]]
-                   
-        Array   -> [[lBracket, Rep0 [ArrayVal], rBracket]]
-        ArrayVal    -> [[VIA, Opt [comma]]]
-        TypeArray   -> [[lBracket, Type, rBracket]]
-                
-        Boolean -> [[Alt [TrueK] [FalseK]]]
-        TrueK   -> [[trueK]]
-        FalseK  -> [[falseK]]
-        TypeBool -> [[typeBool]]
-        
-        Integer -> [[int]]
-        TypeInt -> [[typeInt]]
-        
-        Character -> [[char]]
-        TypeChar -> [[typeChar]]
-                
-        TypeNothing -> [[nothing]]
-        
-
--- shorthand names can be handy, such as:
-lPar        = Symbol "("
-rPar        = Symbol ")"
-lBracket    = Symbol "["
-rBracket    = Symbol "]"
-
-bool        = SyntCat Boolean
-trueK       = SyntCat TrueK
-falseK      = SyntCat FalseK
-int         = SyntCat Integer
-char        = SyntCat Character
-idf         = SyntCat Idf
-funcName    = SyntCat FuncName
-
-typeBool    = Keyword "boolean"
-typeInt     = Keyword "integer"
-typeChar    = Keyword "character"
-greater     = Keyword "greater"
-orK         = Keyword "or"
-than        = Keyword "than"
-equal       = Keyword "equal"
-smaller     = Keyword "smaller"
-equals      = Keyword "equals"
-inc         = Keyword "increment"
-plus        = Keyword "plus"
-minus       = Keyword "minus"
-times       = Keyword "times"
-divided     = Keyword "divided"
-by          = Keyword "by"
-
-suppose     = Keyword "suppose"
-after       = Keyword "after"
-is          = Keyword "is"
-task        = Keyword "task"
-global      = Keyword "global"
-takes       = Keyword "takes"
-comma       = Keyword ","
-andK        = Keyword "and"
-gives       = Keyword "gives"
-dot         = Keyword "."
-to          = Keyword "to"
-while       = Keyword "while"
-doK         = Keyword "do"
-comment     = Keyword "btw"
-when        = Keyword "when"
-otherwiseK  = Keyword "otherwise"
-nothing     = Keyword "nothing"
-give        = Keyword "give"
-stop        = Keyword "stop"
-semi        = Keyword ":"
-prog        = Keyword "program"
-ofK         = Keyword "of"
-lengthK     = Keyword "length"
 
 
--- ==========================================================================================================
--- Parsing      - Note that a ParseTree contains a lot of syntactic information that is not desirable in an AST.
---                So you still have to write a function that transforms a ParseTree into an AST.
--- Token        - a 2-tuple of a non-terminal and a string, where the non-terminal
---                indicates to what syntactic category teh string belongs.
 
-type Token      = (Alphabet,String)
 
-data ParseTree  = PLeaf Token                   -- PLeaf: ParseTree-Leaf
-                | PNode Alphabet [ParseTree]    -- PNode: ParseTree-Node
-                deriving (Eq,Show)
-
-type ParseState = ( Alphabet                    -- Non-terminal indicating the present subexpression
-                  , [ParseTree]                 -- The already produced trees within the present subexpression
-                  , [Token]                     -- The remaining list of input tokens
-                  )
 
 
 -- =================================================================
@@ -377,13 +135,12 @@ toRoseTree1 t = case t of
 -- If we would have done that, it would be a lot easier to pattern match and also a lot more compact.
 -- Sadly when we tought of this (remembered this) it was too late to change it.
 
-data AST = ASTNode Alphabet [AST] | ASTLeaf String deriving (Show, Eq)
+
 
 toAST :: ParseTree -> AST
 toAST node = case node of
         (PLeaf (c,s))                   -> ASTLeaf s
         (PNode Line [t])                -> toAST t -- this should be skipped
-        (PNode ProgLine [t])            -> toAST t
         (PNode ArrayVal [t, _])         -> toAST t
         (PNode ArrayVal [t])            -> toAST t
         (PNode FalseK [t])              -> toAST t

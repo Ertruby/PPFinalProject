@@ -1,8 +1,9 @@
 program Test1:
-        task Stuff takes integer i and gives nothing after:
-            suppose [integer] a of length 5.
-            a[1] is 9.
-        stop.
+        suppose [integer] a of length 3.
+        suppose integer herman is 5.
+        a is [1,-2,herman].
+        
+       
         
         task H takes integer i and gives integer after:
             suppose integer n is i plus 1.
@@ -13,10 +14,11 @@ program Test1:
             suppose [integer] a of length 5.
             suppose integer c is i plus j.
             suppose [integer] o is [1,2,3].
-            suppose [integer] k.
             a[1] is 2.
             a[1] is c.
-            c is a[0] plus b.
+            task Stuff takes integer i and gives nothing after:
+                a[1] is 9.
+            stop.
             Stuff(5).
             g is false.
             suppose boolean h is true.
@@ -34,9 +36,5 @@ program Test1:
             stop.
         give b.
         
-        suppose [integer] a of length 5.
-        suppose integer herman is 5.
-        a is [5,-5,herman].
         suppose integer c is H(herman).
-        
     stop.

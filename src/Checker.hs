@@ -12,13 +12,13 @@ import qualified Data.Text as TXT
 -- =========================================================
 
 -- main function
-check :: AST -> IO()-- supposed to take a Program node, works with more node types, but not all of them
-check t =            printErrors t (typeCheckScope [t] [])
+check :: AST -> IO()-- supposed to take a Program node of an AST, works with more node types, but not all of them so just put in a Program node..
+check t =            printErrors t (typeCheckScope [t] []) -- find errors, and print them.
             
--- printErrors :: AST -> [(AST,String)] -> IO() -- first argument should be the root of the AST of the program
+printErrors :: AST -> [(AST,String)] -> IO() -- first argument should be the root of the AST of the program for getting the line number.
 printErrors root errList
-    | errList == [] = putStr "Type and scope checking completed\n"
-    | otherwise = do
+    | errList == [] = putStr "Type and scope checking completed\n" -- checks passed successful
+    | otherwise = do -- ooh errors! print the errors in a fancy and clear manner and then throw an error so the compiler stops.
                     putStr "\n===========================================================\n"
                     let l = map (\(t,e) -> ("- Sentence " ++ show (getLineNr root t) ++ ": \n" ++ e ++ "\n")) errList
                     putStr (concat l)
@@ -26,6 +26,11 @@ printErrors root errList
                     error "Errors found, printed them above this line."
 
 -- general type checker per scope
+-- takes a list of AST's and a varList and gives a list of AST's and strings back that represent the node an error is found at and an error message.
+-- put a program node in a list and put it in here for normal use. the varlist should be empty at the start as it is a new program. 
+-- it wont go wrong if you put other AST nodes in here or put a varlist in that already has some variables in it
+-- it pattern matches on several nodes with its subtrees that would correspond to certain statements.
+-- any nodes that are not caught in the pattern matching will and may be ignored.
 typeCheckScope :: [AST] -> [(String, String)] -> [(AST, String)] -- second argument (varList) should be empty when called by another function
 typeCheckScope nodes varList = case nodes of
         []                                                                              -> []
@@ -88,14 +93,12 @@ typeCheckScope nodes varList = case nodes of
             | getType varList t2 /= "TypeInt"                                           -> (t,"increment takes an integer variable") : typeCheckScope ts varList
             | otherwise                                                                 -> typeCheckScope ts varList
         (t:ts)                                                                          -> typeCheckScope ts varList
-
--- get globals variables and functions for initializing the varList
-getGlobals :: [AST] -> [(String,String)]
-getGlobals [] = []
-getGlobals (t@(ASTNode Task kids):ts) = makeTupleTask t : getGlobals ts
-getGlobals (t:ts) = getGlobals ts
         
 -- type and correctness checking of expression sub trees
+-- takes a varList and an AST node, which should be an expression, but can also be several sub nodes of expression. 
+-- gives back a string that is the type of the expression
+-- might also return a string that starts with ERR and then an error message in which case it found an error somewhere.
+-- if it doesn't recognize a node, it will throw an exception
 getAndCheckExpr :: [(String, String)] -> AST -> String
 getAndCheckExpr varList node = case node of
         (ASTNode Idf [ASTLeaf var])                                 -> getType varList node
@@ -156,6 +159,7 @@ getAndCheckExpr varList node = case node of
         t                                                           -> error ("error at getAndCheckExpr --> " ++ show t)
 
 -- get type of variable from varList
+-- takes a varlist and an Idf node or a Value node or a FuncCall node.
 getType :: [(String,String)] -> AST -> String
 getType [] (ASTNode Idf [ASTLeaf var])              = ("ERRVariable " ++ var ++ " not in scope")
 getType varList (ASTNode Idf [ASTLeaf var, i])      = getType varList (ASTNode Idf [ASTLeaf var])
@@ -171,6 +175,7 @@ getType ((n,t):xs) t2@(ASTNode FuncCall (ASTNode FuncName [ASTLeaf name]:args))
 getType _ t                                         = error ("unsupported node in getType --> " ++ show t)
 
 -- check if a variable is already defined in the same scope (scopes are split by a special tuple (#,#))
+-- takes a varlist and the name of the variable
 inSameScope :: [(String,String)] -> String -> Bool
 inSameScope [] _ = False
 inSameScope ((n,t):xs) varname
@@ -179,6 +184,8 @@ inSameScope ((n,t):xs) varname
         | otherwise = inSameScope xs varname
         
 -- make tuple to add to varList
+-- these are different functions but actually do the same
+-- they pattern match on different types of nodes and sub trees and uses the sub trees to make a good new tuple for in the varlist.
 makeTupleTask :: AST -> (String, String)
 makeTupleTask (ASTNode Task kids) = makeTupleTaskH kids ("", "")
 makeTupleTask t = error ("Node not supported in makeTupleTask --> " ++ show t)
@@ -203,6 +210,7 @@ makeTupleDecl _ (ASTNode _ [ASTNode Type [ASTLeaf typeStr], ASTNode Idf [ASTLeaf
 makeTupleDecl _ (ASTNode Decl [ASTNode Type [ASTNode TypeArray [ASTNode Type [ASTLeaf typestr]]], ASTNode Idf [ASTLeaf nameStr]]) = (nameStr, (show TypeArray) ++ typestr)
 makeTupleDecl _ t = error ("Node not supported in makeTupleDecl --> " ++ show t)
 
+-- get the return type of a function. is either the type of the variable of the last element of the input list, or it is nothing if that last node is not an Idf node.
 getReturnType :: [AST] -> String -- kids of the body of the task should go in here only
 getReturnType [] = "ERRreturnVariable not declared in the task"
 getReturnType ts | getNodeType (head (reverse ts)) /= Idf = "TypeNothing"
@@ -214,10 +222,15 @@ getReturnType (ASTNode Decl [ASTNode Type [ASTLeaf t], idf, _]:ts)
         | otherwise = getReturnType ts
 getReturnType (t:ts) = getReturnType ts -- not a decl
 
+-- gets the type of the node, that is , the Alphabet that is in it.
+-- mainly made because otherwise some pattern matching would be even bigger.
 getNodeType :: AST -> Alphabet
 getNodeType (ASTNode x _) = x
 
 -- get line nr for decent error throwing
+-- gets the path to a certain AST node
+-- takes the root of the AST as first argument and the AST you are searching for as the second.
+-- the third argument should be an empty list so it can use it for creating the path. 
 getPath :: AST -> AST -> [Int] -> [Int]
 getPath t@(ASTLeaf _) t2 path 
         | t == t2 = path
@@ -231,11 +244,15 @@ getPath t@(ASTNode _ kids) t2 path
             pl = filter (\x -> x /= []) [getPath (kids!!i) t2 (path ++ [i]) | i <- [0..((length kids)-1)]]
 
 -- counts lines that are in front/above a certain node
+-- calls countLines for every node on the left of the node you are going down to
+-- add all these lines and add 1 so you have the line number you are at
+-- takes the root AST and the path you found with getPath, returns an int that is the line number.
 countLinesAbove :: AST -> [Int] -> Int
 countLinesAbove t [] = 0
 countLinesAbove (ASTNode _ kids) (x:xs) = (sum (map countLines (take (x-1) kids)) ) + 1 + countLinesAbove (kids!!x) xs
 
 -- counts how many lines of codes a node contains
+-- the nodes that are pattern matched here represent a new line, other nodes don't and can be skipped.
 countLines :: AST -> Int
 countLines (ASTLeaf _) = 0
 countLines (ASTNode Decl _) = 1
@@ -246,6 +263,6 @@ countLines (ASTNode When kids) = sum (map countLines kids)
 countLines (ASTNode _ kids) = sum (map countLines kids)
 
 -- gives the line number corresponding to a certain node
--- the first argument should be the root of the ast (the Program node)
+-- the first argument should be the root of the AST (the Program node) and the second the one you want a line number of.
 getLineNr :: AST -> AST -> Int
 getLineNr root t = countLinesAbove root (getPath root t [])

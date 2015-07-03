@@ -1,11 +1,9 @@
 module Main where
 
-
-import Prelude
 import System.IO
 import Parse (parse0, showAST)
 import Checker (check, countLines)
-import TreeWalker
+import TreeWalker (writeToFile)
 import Data.List
 import Data.Char
 

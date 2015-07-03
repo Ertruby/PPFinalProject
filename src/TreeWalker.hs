@@ -2,13 +2,11 @@
 
 module TreeWalker where
 
-import Parse
+import DataTypesEtc
 import Debug.Trace
-
 import Data.Int
 import Sprockell.System
 
--- test99 = walkTree [toAST test1] []
 
 writeToFile:: [AST] -> String -> String 
 writeToFile ast s = "{-# LANGUAGE RecordWildCards #-} \nmodule Output." ++ s ++ " where \nimport Sprockell.System\n"
@@ -41,7 +39,7 @@ walkTree (n:ns) addrList  = case n of
                     ins = pushArgs args addrList
                     addrC = fromIntegral ((length addrList) :: Int) :: Int32 
                     retAddr = fromIntegral ((length ins) + 4 :: Int) :: Int32 
-    ASTNode Idf [ASTLeaf s] -- Tasks give
+    ASTNode Idf [ASTLeaf s] -- give
             -> [Load (Addr (head [addr | (i, addr) <- addrList, s == i])) RegA]
     ASTNode Body ls
             -> walkTree ls addrList  ++ walkTree ns addrList 
@@ -63,7 +61,7 @@ walkTree (n:ns) addrList  = case n of
                     bi = walkTree [b] addrList 
                     l = fromIntegral ((length bi)+4 :: Int) :: Int32
     ASTNode Decl (t:i:e)
-            | checkTypeArray t && length e > 0 -> --traceShow ("success: \n" ++ show(newAddrList) ++ "\n") 
+            | checkTypeArray t && length e > 0 -> 
                 arrayToIns e newAddrList (getIdf i) arrayLength
                 ++ walkTree ns newAddrList
             | length e > 0 -> (evalExpr e addrList RegA) ++ [Store RegA (Addr addrC)] 
@@ -91,7 +89,7 @@ walkTree (n:ns) addrList  = case n of
                 ++ walkTree ns addrList 
                 where
                     test = [addr | (s, addr) <- addrList, s == getIdf i]
-    ASTNode Parse.Incr [i]
+    ASTNode DataTypesEtc.Incr [i]
             -> evalExpr [i] addrList RegA 
                 ++ [Const 1 RegB, Compute Add RegA RegB RegA, Store RegA (Addr (head test))]
                 ++ walkTree ns addrList 
@@ -142,9 +140,8 @@ evalExpr (n:ns) addrList reg = case n of
     ASTNode _ ls -- skips: Value, Expr with 1 child
             -> evalExpr ls addrList reg
 
---ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]    
---[("o[0]",0),("o[1]",1),("o[2]",2),("c",3)]
-test12 = arrayToIns [ASTNode Expr [ASTNode Array [ASTNode Value [ASTNode Integer [ASTLeaf "1"]],ASTNode Value [ASTNode Integer [ASTLeaf "2"]],ASTNode Value [ASTNode Integer [ASTLeaf "3"]]]]] [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)] "o" 3
+
+
             
 arrayToIns:: [AST] -> [(String, Address)] -> String -> Int ->[Instruction]    
 arrayToIns [ASTNode Array v@(l:ls)] addrList i size
@@ -154,7 +151,6 @@ arrayToIns [ASTNode Array v@(l:ls)] addrList i size
                 where 
                     addr = head [addr | (s, addr) <- addrList, s == idf]
                     idf = i ++ "[" ++ show (size - length v) ++ "]"
-                    -- addrC = fromIntegral ((length addrList) :: Int) :: Int32   
 arrayToIns [ASTNode Expr ls] addrList i size = arrayToIns ls addrList i size
 arrayToIns [ASTNode Value ls] _ _ _ = []                
             
@@ -171,7 +167,6 @@ popArgs ((ASTNode Arg [t,i]):ns) (ins,addrList)
     where 
         addrC = fromIntegral ((length addrList) :: Int) :: Int32
         
--- pushAddresses [("o[0]",0),("o[1]",1),("o[2]",2),("c",3)]
 pushAddresses:: Address -> [Instruction]
 pushAddresses addrC 
     | addrC == 0 = [Load (Addr addrC) RegA, Push RegA]
@@ -196,16 +191,6 @@ checkTypeArray _ = False
 getLength:: [AST] -> Int
 getLength [ASTNode Expr [ASTNode Array ls]] = length ls
 getLength [ASTNode Expr [ASTNode Value [ASTNode Integer [ASTLeaf n]]]] = read n :: Int
-     
--- setArgs:: [AST] -> [(String, Address)] -> [Address] -> [Instruction]
--- setArgs [] _ [] = []
--- setArgs (e:es) addrList (a:addrs) = evalExpr [e] addrList RegA ++ [Store RegA (Addr a)] ++ setArgs es addrList addrs 
--- getType:: AST -> Alphabet
--- getType (ASTNode Type [ASTLeaf s])  | s == "TypeBool" = TypeBool
-                                    -- | s == "TypeBool" = TypeInt
-                                    -- | s == "TypeBool" = TypeChar
-                                    -- | s == "TypeBool" = TypeNothing
-                                    -- | otherwise = error "fucktard"
                                     
 regList = [RegA,RegB,RegC,RegD,RegE] 
 getNextReg:: [Reg] -> Reg -> Reg

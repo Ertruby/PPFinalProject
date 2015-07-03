@@ -1,14 +1,11 @@
 module Checker where 
 
-import Debug.Trace
 import Data.List
 import FPPrac.Trees
-import Prelude
-import Data.Char
+import DataTypesEtc
 import qualified Data.Maybe
 import qualified Data.Text as TXT
 
-import Parse
 
 -- =========================================================
 -- type checking.. also includes scope checking

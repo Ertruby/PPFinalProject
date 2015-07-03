@@ -1,4 +1,4 @@
-program Test3:
+program Fibonnaci:
 task Fib takes integer n and gives integer after:
     suppose integer k.
     when (n equals 0) or (n equals 1) do:

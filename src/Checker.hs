@@ -76,7 +76,7 @@ typeCheckScope nodes varList = case nodes of
         (t@(ASTNode ProgBody kids):ts)                                                  -> typeCheckScope kids varList ++ typeCheckScope ts varList
         (t@(ASTNode Task kids):ts)   
             | fst newTup == "ERR"                                                       -> (t,snd newTup) : typeCheckScope ts varList
-            | otherwise                                                                 -> typeCheckScope kids (("#", "#"):varList) ++ typeCheckScope ts (newTup : varList)
+            | otherwise                                                                 -> typeCheckScope kids (newTup:("#", "#"):varList) ++ typeCheckScope ts (newTup : varList)
             where
                 newTup = makeTupleTask t
         (t@(ASTNode Body kids):ts)                                                      -> typeCheckScope kids varList ++ typeCheckScope ts varList

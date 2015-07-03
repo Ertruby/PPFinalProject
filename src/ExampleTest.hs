@@ -265,18 +265,313 @@ prog = [Const 5 RegA
         ,Store RegB (Addr 0)                -- pop known addresses
         ,Store RegA (Addr 6)                -- c = H(herman)
         ,EndProg]
+        
+prog1:: [Instruction] 
+prog1 = [Const 3 RegA
+        ,Compute Add RegA PC RegA
+        ,Store RegA (Addr 0)            -- task TestH starts at 9
+        ,Jump (Rel 13)                  -- skip TestH: 21
+        ,Pop RegA
+        ,Store RegA (Addr 1)            -- n = 12
+        ,Load (Addr 1) RegA
+        ,Store RegA (Addr 2)            -- a = n = 12
+        ,Load (Addr 2) RegA
+        ,Const 1 RegB
+        ,Compute Add RegA RegB RegA
+        ,Store RegA (Addr 2)            -- a = a + 1 = 13
+        ,Load (Addr 2) RegA
+        ,Pop RegB                       -- pop return address
+        ,Push RegA                      -- push return value
+        ,Jump (Ind RegB)                -- jump to return address: 46
+        ,Const 3 RegA
+        ,Compute Add RegA PC RegA
+        ,Store RegA (Addr 1)            -- task Test starts at 25
+        ,Jump (Rel 36)                  -- skip Test: 60
+        ,Pop RegA
+        ,Store RegA (Addr 2)            -- h = 3
+        ,Const 4 RegA
+        ,Load (Addr 2) RegB
+        ,Compute Mul RegA RegB RegA
+        ,Store RegA (Addr 2)            -- h = 4*h = 12
+        ,Load (Addr 3) RegA
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                      -- push known addresses
+        ,Const 6 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 46
+        ,Load (Addr 2) RegA
+        ,Push RegA                      -- push arg h=12
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to TestH
+        ,Pop RegA                       -- pop return value
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Pop RegB
+        ,Store RegB (Addr 2)
+        ,Pop RegB
+        ,Store RegB (Addr 3)            -- pop known addresses
+        ,Store RegA (Addr 3)            -- n = TestH(h) = 13
+        ,Load (Addr 3) RegA
+        ,Pop RegB                       -- pop return address
+        ,Push RegA                      -- push return value
+        ,Jump (Ind RegB)                -- jump to return address
+        ,Load (Addr 2) RegA             -- AFTER Test
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                      -- push known addresses
+        ,Const 6 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 73
+        ,Const 3 RegA
+        ,Push RegA                      -- push arg 3
+        ,Load (Addr 1) RegA
+        ,Jump (Ind RegA)                -- jump to Test
+        ,Pop RegA                       -- pop return value
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Pop RegB
+        ,Store RegB (Addr 2)            -- pop known addresses
+        ,Store RegA (Addr 2)            -- k = Test(3) = 13
+        ,EndProg]
+
+fib:: [Instruction] 
+fib = [Const 3 RegA
+        ,Compute Add RegA PC RegA
+        ,Store RegA (Addr 0)            -- task fib starts at 353
+        ,Jump (Rel 78)                  -- skip to 430
+        ,Pop RegA                       
+        ,Store RegA (Addr 1)            -- n = 3
+        ,Const 0 RegA
+        ,Store RegA (Addr 2)
+        ,Load (Addr 1) RegA
+        ,Const 0 RegB
+        ,Compute Equal RegA RegB RegA
+        ,Load (Addr 1) RegB
+        ,Const 1 RegC
+        ,Compute Equal RegB RegC RegB
+        ,Compute Or RegA RegB RegA      -- n=0 || n=1
+        ,Const 1 RegB
+        ,Compute Xor RegA RegB RegA     -- if true, then false and the otherway around
+        ,Const 5 RegB
+        ,Compute Add RegB PC RegB
+        ,Branch RegA (Ind RegB)         -- jump if false to 372
+        ,Const 1 RegA
+        ,Store RegA (Addr 2)
+        ,Jump (Rel 55)
+        ,Load (Addr 3) RegA             -- OTHERWISE
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                      -- push known addresses
+        ,Const 8 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 389
+        ,Load (Addr 1) RegA
+        ,Const 1 RegB
+        ,Compute Sub RegA RegB RegA
+        ,Push RegA                      -- push arg n-1
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to Fib
+        ,Pop RegA
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Pop RegB
+        ,Store RegB (Addr 2)
+        ,Pop RegB
+        ,Store RegB (Addr 3)
+        ,Load (Addr 3) RegA
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA
+        ,Const 8 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Const 2 RegB
+        ,Compute Sub RegA RegB RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)
+        ,Pop RegB
+        ,Pop RegC
+        ,Store RegC (Addr 0)
+        ,Pop RegC
+        ,Store RegC (Addr 1)
+        ,Pop RegC
+        ,Store RegC (Addr 2)
+        ,Pop RegC
+        ,Store RegC (Addr 3)
+        ,Compute Add RegA RegB RegA
+        ,Store RegA (Addr 2)
+        ,Load (Addr 2) RegA
+        ,Pop RegB
+        ,Push RegA
+        ,Jump (Ind RegB)
+        ,Load (Addr 1) RegA             -- AFTER Fib
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA                      -- push known addresses
+        ,Const 6 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 441
+        ,Const 3 RegA
+        ,Push RegA                      -- push arg 3
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to Fib
+        ,Pop RegA
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Store RegA (Addr 1)
+        ,EndProg]
+        
+fib2 = [Const 3 RegA
+        ,Compute Add RegA PC RegA
+        ,Store RegA (Addr 0)
+        ,Jump (Rel 86)                  -- skip task Fib: 538
+        ,Pop RegA
+        ,Store RegA (Addr 1)            -- 1:n = 3, 2:n=2
+        ,Const 0 RegA
+        ,Store RegA (Addr 2)            -- k = 0
+        ,Load (Addr 1) RegA
+        ,Const 0 RegB
+        ,Compute Equal RegA RegB RegA
+        ,Load (Addr 1) RegB
+        ,Const 1 RegC
+        ,Compute Equal RegB RegC RegB
+        ,Compute Or RegA RegB RegA      -- n=0 || n=1
+        ,Const 1 RegB
+        ,Compute Xor RegA RegB RegA
+        ,Const 5 RegB
+        ,Compute Add RegB PC RegB
+        ,Branch RegA (Ind RegB)         -- jump if false: 472
+        ,Const 1 RegA
+        ,Store RegA (Addr 2)
+        ,Jump (Rel 63)
+        ,Load (Addr 3) RegA
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA
+        ,Const 8 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 489
+        ,Load (Addr 1) RegA
+        ,Const 1 RegB
+        ,Compute Sub RegA RegB RegA
+        ,Push RegA                      -- push n-1
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to task Fib
+        ,Pop RegA                       -- pop return value
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Pop RegB
+        ,Store RegB (Addr 2)
+        ,Pop RegB
+        ,Store RegB (Addr 3)
+        ,Store RegA (Addr 3)            -- l = Fib(n-1)
+        ,Load (Addr 4) RegA
+        ,Push RegA
+        ,Load (Addr 3) RegA
+        ,Push RegA
+        ,Load (Addr 2) RegA
+        ,Push RegA
+        ,Load (Addr 1) RegA
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA
+        ,Const 8 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                      -- push return address 518
+        ,Load (Addr 1) RegA
+        ,Const 2 RegB
+        ,Compute Sub RegA RegB RegA
+        ,Push RegA                      -- push n-2
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                -- jump to Fib
+        ,Pop RegA                       -- pop return value
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Pop RegB
+        ,Store RegB (Addr 2)
+        ,Pop RegB
+        ,Store RegB (Addr 3)
+        ,Pop RegB
+        ,Store RegB (Addr 4)
+        ,Store RegA (Addr 4)            -- r = Fib(n-2)
+        ,Load (Addr 3) RegA
+        ,Load (Addr 4) RegB
+        ,Compute Add RegA RegB RegA
+        ,Store RegA (Addr 2)            -- k = l+r
+        ,Load (Addr 2) RegA
+        ,Pop RegB                       -- pop return address
+        ,Push RegA                      -- push return value
+        ,Jump (Ind RegB)                -- jump to return address
+        ,Load (Addr 1) RegA                 -- AFTER task Fib
+        ,Push RegA
+        ,Load (Addr 0) RegA
+        ,Push RegA
+        ,Const 6 RegA
+        ,Compute Add RegA PC RegA
+        ,Push RegA                          -- push return address 549
+        ,Const 3 RegA
+        ,Push RegA                          -- push arg 3
+        ,Load (Addr 0) RegA
+        ,Jump (Ind RegA)                    -- jump to task Fib
+        ,Pop RegA
+        ,Pop RegB
+        ,Store RegB (Addr 0)
+        ,Pop RegB
+        ,Store RegB (Addr 1)
+        ,Store RegA (Addr 1)
+        ,EndProg]
+        
+fib3 = [Const 3 RegA,Compute Add RegA PC RegA,Store RegA (Addr 0),Jump (Rel 86),Pop RegA,Store RegA (Addr 1),Const 0 RegA,Store RegA (Addr 2),Load (Addr 1) RegA,Const 0 RegB,Compute Equal RegA RegB RegA,Load (Addr 1) RegB,Const 1 RegC,Compute Equal RegB RegC RegB,Compute Or RegA RegB RegA,Const 1 RegB,Compute Xor RegA RegB RegA,Const 5 RegB,Compute Add RegB PC RegB,Branch RegA (Ind RegB),Const 1 RegA,Store RegA (Addr 2),Jump (Rel 63),Load (Addr 3) RegA,Push RegA,Load (Addr 2) RegA,Push RegA,Load (Addr 1) RegA,Push RegA,Load (Addr 0) RegA,Push RegA,Const 8 RegA,Compute Add RegA PC RegA,Push RegA,Load (Addr 1) RegA,Const 1 RegB,Compute Sub RegA RegB RegA,Push RegA,Load (Addr 0) RegA,Jump (Ind RegA),Pop RegA,Pop RegB,Store RegB (Addr 0),Pop RegB,Store RegB (Addr 1),Pop RegB,Store RegB (Addr 2),Pop RegB,Store RegB (Addr 3),Store RegA (Addr 3),Load (Addr 4) RegA,Push RegA,Load (Addr 3) RegA,Push RegA,Load (Addr 2) RegA,Push RegA,Load (Addr 1) RegA,Push RegA,Load (Addr 0) RegA,Push RegA,Const 8 RegA,Compute Add RegA PC RegA,Push RegA,Load (Addr 1) RegA,Const 2 RegB,Compute Sub RegA RegB RegA,Push RegA,Load (Addr 0) RegA,Jump (Ind RegA),Pop RegA,Pop RegB,Store RegB (Addr 0),Pop RegB,Store RegB (Addr 1),Pop RegB,Store RegB (Addr 2),Pop RegB,Store RegB (Addr 3),Pop RegB,Store RegB (Addr 4),Store RegA (Addr 4),Load (Addr 3) RegA,Load (Addr 4) RegB,Compute Add RegA RegB RegA,Store RegA (Addr 2),Load (Addr 2) RegA,Pop RegB,Push RegA,Jump (Ind RegB),Load (Addr 1) RegA,Push RegA,Load (Addr 0) RegA,Push RegA,Const 6 RegA,Compute Add RegA PC RegA,Push RegA,Const 2 RegA,Push RegA,Load (Addr 0) RegA,Jump (Ind RegA),Pop RegA,Pop RegB,Store RegB (Addr 0),Pop RegB,Store RegB (Addr 1),Store RegA (Addr 1),EndProg]
+
+
+
 
 
 
 
 
 debug :: SystemState -> String
-debug SysState{..}  | (localMem (sprs !! 0) !!! 6) == 3 = "Second shared memaddr equals 3.\n"
-                    | (localMem (sprs !! 0) !!! 6) == 1 = "Second shared memaddr equals 1.\n"
-                    | (localMem (sprs !! 0) !!! 6) == 2 = "Second shared memaddr equals 2.\n"
-                    | (localMem (sprs !! 0) !!! 6) == 4 = "Second shared memaddr equals 4.\n"
-                    | (localMem (sprs !! 0) !!! 6) == 5 = "Second shared memaddr equals 5.\n"
-                    | (localMem (sprs !! 0) !!! 6) == 6 = "Second shared memaddr equals 6.\n"
+debug SysState{..}  
+                    | (localMem (sprs !! 0) !!! 1) == 1 = "Second shared memaddr equals 1.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 2 = "Second shared memaddr equals 2.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 3 = "Second shared memaddr equals 3.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 4 = "Second shared memaddr equals 4.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 5 = "Second shared memaddr equals 5.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 6 = "Second shared memaddr equals 6.\n"
+                    | (localMem (sprs !! 0) !!! 1) == 13 = "Second shared memaddr equals 13.\n"
                     
                     
                     
@@ -284,4 +579,4 @@ debug SysState{..}  | (localMem (sprs !! 0) !!! 6) == 3 = "Second shared memaddr
                     
 debug _ = "Nope\n"
 
-main = runDebug debug 1 prog
+main = runDebug debug 1 fib3

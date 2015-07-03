@@ -180,7 +180,7 @@ pushAddresses addrC
 popAddresses:: Address -> Reg -> [Instruction]
 popAddresses addrC reg
     | addrC == 0 = [Pop reg, Store reg (Addr addrC)]
-    | otherwise = [Pop reg, Store reg (Addr addrC)] ++ popAddresses (addrC-1) reg 
+    | otherwise = popAddresses (addrC-1) reg ++ [Pop reg, Store reg (Addr addrC)]
     
 allocArray:: [(String, Address)] -> String -> Int -> [(String, Address)]
 allocArray addrList idf i

@@ -1,10 +1,11 @@
-program Test2: task Fac takes integer n and gives nothing after:
-    suppose [integer] o is [1,2,3].
-    suppose integer a is 3.
-    suppose [integer] k of length 5.
-    k is [1,2,3,4,5].
-    k[a] is 8.
-    a is k[a] plus k[0].
-    stop.
-Fac(3).
+program Test2: 
+task TestH takes integer n and gives integer after:
+    suppose integer a is n.
+    increment a.
+    give a.
+task Test takes integer h and gives integer after:
+    h is 4 times h.
+    suppose integer n is TestH(h).
+    give n.
+suppose integer k is Test(3).
 stop.

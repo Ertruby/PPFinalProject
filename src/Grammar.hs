@@ -3,6 +3,7 @@ import DataTypesEtc
 
 grammar :: Grammar
 
+-- the potato grammar
 grammar nt = case nt of
 
         Program -> [[prog, FuncName, ProgBody]]

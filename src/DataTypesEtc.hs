@@ -1,6 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module DataTypesEtc where
 
+-- all datatypes are defined here so we can import this file when we need one of the types.
+-- because we do it like this we can make the project more modular because otherwise modules have to import each other.
+
 -- Embedded language for alphabet:
 data Alphabet =   Symbol     String             -- Token given ("char" specific for this example)
                 | Keyword    String             -- A given string, but included in the parsetree
@@ -69,12 +72,6 @@ instance Show (Char  -> Bool) where show f = ""         -- Just make sure you ne
 instance Show (Token -> Bool) where show f = ""
                 
 type Grammar = Alphabet -> [[Alphabet]]
-
--- ==========================================================================================================
--- Parsing      - Note that a ParseTree contains a lot of syntactic information that is not desirable in an AST.
---                So you still have to write a function that transforms a ParseTree into an AST.
--- Token        - a 2-tuple of a non-terminal and a string, where the non-terminal
---                indicates to what syntactic category teh string belongs.
 
 type Token      = (Alphabet,String)
 

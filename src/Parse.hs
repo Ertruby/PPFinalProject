@@ -8,6 +8,7 @@ import Grammar
 import qualified Data.Maybe
 import qualified Data.Text as TXT
 
+-- main function to call here. input should be a complete program that you want parsed. it will return an AST that the type checker can use.
 parse0 :: String -> AST
 parse0 str = toAST $ parse grammar Program (tok str)
 
@@ -140,13 +141,13 @@ toRoseTree1 t = case t of
 toAST :: ParseTree -> AST
 toAST node = case node of
         (PLeaf (c,s))                   -> ASTLeaf s
-        (PNode Line [t])                -> toAST t -- this should be skipped
+        (PNode Line [t])                -> toAST t -- these should be skipped
         (PNode ArrayVal [t, _])         -> toAST t
         (PNode ArrayVal [t])            -> toAST t
         (PNode FalseK [t])              -> toAST t
         (PNode VIA [t])                 -> toAST t
-        (PNode TrueK [t])               -> toAST t
-        (PNode TypeInt ts)              -> ASTLeaf (show TypeInt) -- make leaf of this
+        (PNode TrueK [t])               -> toAST t -- 
+        (PNode TypeInt ts)              -> ASTLeaf (show TypeInt) -- make leaf of these
         (PNode TypeBool ts)             -> ASTLeaf (show TypeBool)
         (PNode TypeChar ts)             -> ASTLeaf (show TypeChar)
         (PNode TypeNothing ts)          -> ASTLeaf (show TypeNothing)
@@ -154,8 +155,8 @@ toAST node = case node of
         (PNode GreaterThan ts)          -> ASTLeaf (show GreaterThan)
         (PNode GreaterThanEq ts)        -> ASTLeaf (show GreaterThanEq)
         (PNode SmallerThan ts)          -> ASTLeaf (show SmallerThan)
-        (PNode SmallerThanEq ts)        -> ASTLeaf (show SmallerThanEq)
-        (PNode Arg ts)                  -> ASTNode Arg (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] -- this one doenst need its leafs
+        (PNode SmallerThanEq ts)        -> ASTLeaf (show SmallerThanEq) -- 
+        (PNode Arg ts)                  -> ASTNode Arg (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] -- these don't need its leafs
         (PNode Task ts)                 -> ASTNode Task (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode Body ts)                 -> ASTNode Body (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode Decl ts)                 -> ASTNode Decl (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
@@ -165,8 +166,8 @@ toAST node = case node of
         (PNode ProgBody ts)             -> ASTNode ProgBody (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode While ts)                -> ASTNode While (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
         (PNode Incr ts)                 -> ASTNode Incr (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-        (PNode FuncCall ts)             -> ASTNode FuncCall (map toAST ts2) where ts2 = [t | t <- ts, isPNode t]
-        (PNode nt ts)                   -> ASTNode nt (map toAST ts)
+        (PNode FuncCall ts)             -> ASTNode FuncCall (map toAST ts2) where ts2 = [t | t <- ts, isPNode t] --
+        (PNode nt ts)                   -> ASTNode nt (map toAST ts) -- do nothing special, just direct to the sub trees
 
 -- showing the AST
 showAST :: AST -> IO()
@@ -184,18 +185,25 @@ isPNode x = False
 -- ==================================================
 -- tokenizer
 -- ==================================================
+-- list of tokens in text form
 keys = ["suppose", "integer", "boolean", "character", "task", "takes", ",", "and", "gives", 
         ".", "to", "while", "is", "do", "increment", "plus", "minus", "times", "divided", 
         "by", "when", "otherwise", "give", "after", "greater", "or", "than", "smaller", 
         "equals", "equal", "stop", ":", "program", "(", ")", "[", "]", "of", "length"]
+-- list of tokens in Alphabet form
 keyTokens = [suppose, typeInt, typeBool, typeChar, task, takes, comma, andK, gives, dot, to, 
         while, is, doK, inc, plus, minus, times, divided, by, when, otherwiseK, give, after, 
         greater, orK, than, smaller, equals, equal, stop, semi, prog, lPar, rPar, lBracket, 
         rBracket, ofK, lengthK]
+-- these lists have the same index for the same token so if a string is equal to anything in the first list,
+-- the keyword is the element in the second list at the same index.
 
+-- takes a full program as a string and returns a list of tokens ready to be parsed.
+-- first prepares the string, then puts it in the helper function
 tok :: String -> [(Alphabet,String)]
 tok str = tokH (prepare str)
 
+-- gets a list of strings, made from the program string and returns a list of tokens.
 tokH :: [String] -> [(Alphabet,String)]
 tokH [] = []
 tokH (x:xs) | x == "" = tokH xs
@@ -209,12 +217,17 @@ tokH (x:xs) | x == "" = tokH xs
             where
                 (a,b) = getToken x
        
+-- checks if it is a token using the keys list and which one using also the keytokens list
+-- getToken just makes sure getTokenH has the keys and keytokens list it needs.
 getToken :: String -> (Alphabet,String)       
 getToken str = getTokenH keys keyTokens str
 getTokenH :: [String] -> [Alphabet] -> String -> (Alphabet,String)
 getTokenH [] [] s = (Error, "")
 getTokenH (x:xs) (y:ys) s | s == x = (y,x)
                           | otherwise = getTokenH xs ys s
+                          
+-- prepares the program string to be parsed.
+-- first calls fix dots, then splits the string on spaces so we have separate words.
 prepare :: String -> [String]                          
 prepare str = strlist
             where
@@ -222,7 +235,8 @@ prepare str = strlist
                 txt2 = fixdots txt
                 strl = (map TXT.unpack (TXT.splitOn (TXT.pack " ") txt2))
                 strlist = removeComments strl True
-                    
+
+-- puts spaces around several characters so it will be recognized as a token                
 fixdots :: TXT.Text -> TXT.Text
 fixdots txt = h
             where
@@ -235,6 +249,8 @@ fixdots txt = h
                 g = TXT.replace (TXT.pack "]") (TXT.pack " ] ") f
                 h = TXT.replace (TXT.pack "\n") (TXT.pack "") g
 
+-- removes the comments; iterates over the string list, the boolean is whether we should be taking words or not.
+-- if we see the word  "btw" we stop taking and just skip the words until we see a dot.
 removeComments :: [String] -> Bool -> [String]
 removeComments [] b = []
 removeComments (x:xs) True  | x == "btw" = removeComments xs False

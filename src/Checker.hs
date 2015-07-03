@@ -25,6 +25,11 @@ printErrors root errList
                     putStr "===========================================================\n"
                     error "Errors found, printed them above this line."
 
+-- used for testing so it doens't stop the program if it finds errors but the output can be checked if it is correct.
+-- takes a Program node of an AST and returns weather it has found errors or not.
+testCheck :: AST -> Bool
+testCheck t = typeCheckScope [t] [] == []
+                    
 -- general type checker per scope
 -- takes a list of AST's and a varList and gives a list of AST's and strings back that represent the node an error is found at and an error message.
 -- put a program node in a list and put it in here for normal use. the varlist should be empty at the start as it is a new program. 

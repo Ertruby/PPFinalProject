@@ -8,14 +8,17 @@ b is c times b.
 a is b plus c.
 a is b minus c.
 a is b divided by c.
-x is true and y.		
-x is x or y.			
-x is a equals b.		
-x is a is greater than b.	
-x is a is greater than or equal to b. 	
-x is a is smaller than b. 			
+x is true and y.        
+x is x or y.            
+x is a equals b.        
+x is a is greater than b.   
+x is a is greater than or equal to b.   
+x is a is smaller than b.           
 x is a is smaller than or equal to b.
 suppose [integer] d is [1,2,3].
+suppose [integer] e of length 5.
+d[2] is 34.
+e[4] is d[0] plus d[1].
 
 
 

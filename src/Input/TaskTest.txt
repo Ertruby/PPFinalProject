@@ -1,0 +1,18 @@
+program Test1:
+        task H takes integer i and gives integer after:
+            suppose integer n is i plus 1.
+        give n.
+        
+        task Func takes boolean g and integer i and gives integer after:
+            suppose integer a.
+            task Stuff takes integer i and gives nothing after:
+                a is 9.
+            stop.
+            Stuff(5).
+            a is H(23).
+        give b.
+        
+        suppose integer herman is 5.
+        suppose integer c is H(herman).
+        suppose integer d is Func(true,8).
+    stop.

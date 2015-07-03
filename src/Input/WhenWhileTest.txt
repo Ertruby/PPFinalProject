@@ -1,0 +1,23 @@
+program Test1:
+        suppose boolean h is true.
+        suppose integer a is 4.
+        suppose integer b is 4.
+        suppose integer c is 0.
+        while h and (a equals b) and c is smaller than 20 do:
+            increment c. 
+        stop.
+        
+        suppose boolean y is true.
+        when y do:
+            y is false.
+        stop.
+ 
+        suppose integer x is 0.
+        when x is smaller than or equal to 5 do:
+            x is x plus 5.
+        stop.
+        otherwise do:
+            x is 2.
+        stop. 
+
+    stop.

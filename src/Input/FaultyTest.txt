@@ -1,0 +1,4 @@
+program Test1:
+    btw, INPUT YOUR OWN FAULTY CODE HERE.
+    suppose integer i is 0
+stop.

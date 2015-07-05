@@ -1,4 +1,5 @@
 program Test4:
     suppose [integer] a is 5.
-    suppose [integer] b of length 6.
+    suppose integer x is 2.
+    suppose [integer] b of length x.
     stop.

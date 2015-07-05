@@ -42,8 +42,8 @@ typeCheckScope nodes varList = case nodes of
         (t@(ASTNode Decl [_, _]):ts)
             | fst (makeTupleDecl varList t) == "ERR"                                    -> (t,snd (makeTupleDecl varList t)) : typeCheckScope ts varList
             | otherwise                                                                 -> typeCheckScope ts (makeTupleDecl varList t : varList)
-        (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr [ASTNode Value kids])]):ts)
-            | getAndCheckExpr varList (ASTNode Expr [ASTNode Value kids]) /= "TypeInt"  -> (t,"length of array should be an integer") : typeCheckScope ts varList
+        (t@(ASTNode Decl [tp@(ASTNode Type [ASTNode TypeArray kids0]), i, e@(ASTNode Expr kids)]):ts)
+            | getAndCheckExpr varList e /= "TypeInt"                                    -> (t,"length of array should be an integer") : typeCheckScope ts varList
             | fst tup == "ERR"                                                          -> (t,snd tup) : typeCheckScope ts varList
             | otherwise                                                                 -> typeCheckScope ts (tup : varList) 
             where

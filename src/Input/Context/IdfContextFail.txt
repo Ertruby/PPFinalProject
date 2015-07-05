@@ -1,0 +1,16 @@
+program IdfContextTest: 
+    b is 5.
+    suppose boolean x is true.
+    suppose boolean y is true.
+    suppose integer b is 5.
+    k[b] is 5.
+    k[b] is b.
+    suppose [integer] k of length 5.
+    
+    Test(true).
+    task Test takes boolean c and gives nothing after:
+        suppose integer b.
+        b is k[1] times k[3].
+        stop.
+    
+    stop.

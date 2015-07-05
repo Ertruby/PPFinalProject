@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Testing where
 
 import System.IO
@@ -6,13 +7,13 @@ import System.Directory
 import Parse (parse0, showAST)
 import Checker (testCheck, check, countLines)
 import Parse
-import TreeWalker (writeToFile)
+import TreeWalker (writeToFile, walkTree)
 import Data.List
 import Data.Char
 import DataTypesEtc
 import TestOutcomes
-
-
+import Sprockell.System
+import Debug.Trace
 
         
 testSyntax :: FilePath -> AST -> IO()
@@ -23,21 +24,11 @@ testSyntax input expected = do
         let actual = parse0 contents
         let result = actual == expected
         
-        -- k <- openFile "TestOutcomes.hs" AppendMode
-        -- hPrint k actual
-        -- hClose k
-        
         let trtrn = if result
                         then "No syntactical errors found"
                         else "No syntactical errors found but the AST's are not the same"
         print trtrn
         
-declAssignContext = testContext "Input/DeclAssignTest.txt" 
-whenWhileContext = testContext "Input/WhenWhileTest.txt" 
-taskContext = testContext "Input/TaskTest.txt" 
-fibContext = testContext "Input/fib.txt" 
-idfContext = testContext "Input/Context/IdfContext.txt" 
-idfContextFail = testContext "Input/Context/IdfContextFail.txt" 
 
 testContext :: FilePath -> IO()
 testContext input = do
@@ -56,6 +47,42 @@ drawTree input = do
         contents <- hGetContents h
         let ast = parse0 contents
         Parse.showAST ast
+
+
+        
+        
+        
+        
+        
+        
+type TestSuite = (String, Int, [Instruction], (SystemState -> String))
+
+getRegs sysState spid regs = getRegs' (regbank ((sprs sysState) !! spid)) regs
+    where getRegs' rs = map (rs !)
+
+-- Running test logic --
+runSuite :: TestSuite -> IO ()
+runSuite (name, nSprockells, prog, test) = do
+    putStr name >> putStr " (n=" >> putStr (show nSprockells) >> putStr "): "
+    run nSprockells prog >>= return . test >>= putStr
+    putChar '\n'
+    return ()
+    
+testSemantic input = do
+    h <- openFile input ReadMode
+    contents <- hGetContents h
+    let ast = parse0 contents
+    check ast
+    let suite = testSemanticSuite [ast]
+    runSuite suite
+    return ()
+        
+testSemanticSuite ast = ("Semantics Test", 1, walkTree ast [] ++ [EndProg], testSemanticTest)
+testSemanticTest sysState@SysState{ .. }
+        -- change the integer after !!! to the address you want to look at and the 
+        -- integer after == to the expected output
+         | (localMem (sprs !! 0) !!! 1) == 13 = "Pass"
+         | otherwise             = "Fail"
         
         
 -- ============================================================================================
@@ -81,3 +108,17 @@ whenSyntax = testSyntax "Input/Syntax/whenTest.txt" whenAST
 whenFailSyntax = testSyntax "Input/Syntax/whenFailTest.txt" whenFailAST
 whileSyntax = testSyntax "Input/Syntax/whileTest.txt" whileAST
 whileFailSyntax = testSyntax "Input/Syntax/whileFailTest.txt" whileFailAST
+
+-- ============================================================================================
+-- Context tests:
+
+idfContext = testContext "Input/Context/IdfContext.txt" 
+idfContextFail = testContext "Input/Context/IdfContextFail.txt" 
+typeContext = testContext "Input/Context/TypeContext.txt" 
+typeContextFail = testContext "Input/Context/TypeContextFail.txt" 
+
+-- ============================================================================================
+-- Semantic tests:
+fib = testSemantic "Input/Semantic/fib.txt"
+infiniteLoop = testSemantic "Input/Semantic/infiniteLoop.txt"
+divisionByZero = testSemantic "Input/Semantic/divisionByZero.txt"

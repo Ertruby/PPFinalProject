@@ -55,6 +55,7 @@ grammar nt = case nt of
                     ,[DividedBy]
                     ,[equals]
                     ,[is]
+                    ,[NotEqual]
                     ,[GreaterThan]
                     ,[GreaterThanEq]
                     ,[SmallerThan]
@@ -62,6 +63,7 @@ grammar nt = case nt of
                     ,[andK]
                     ,[orK]]
         
+        NotEqual    -> [[is, notK, equal, to]]
         DividedBy   -> [[divided, by]]
         GreaterThan -> [[is, greater, than]]
         GreaterThanEq -> [[is, greater, than, orK, equal, to]]
@@ -153,3 +155,4 @@ semi        = Keyword ":"
 prog        = Keyword "program"
 ofK         = Keyword "of"
 lengthK     = Keyword "length"
+notK         = Keyword "not"

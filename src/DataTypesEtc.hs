@@ -56,6 +56,7 @@ data Alphabet =   Symbol     String             -- Token given ("char" specific 
                 | FuncCall
                 | Error
                 | TypeNothing
+                | NotEqual
                 deriving (Eq,Show)
                 
 -- functions for shorthand notation for EBNF constructions

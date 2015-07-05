@@ -1,6 +1,0 @@
-{-# LANGUAGE RecordWildCards #-} 
-module Output.Test2.txt where 
-import Sprockell.System
-prog:: [Instruction] 
-prog = [Const 3 RegA,Compute Add RegA PC RegA,Store RegA (Addr 0),Jump (Rel 13),Pop RegA,Store RegA (Addr 1),Load (Addr 1) RegA,Store RegA (Addr 2),Load (Addr 2) RegA,Const 1 RegB,Compute Add RegA RegB RegA,Store RegA (Addr 2),Load (Addr 2) RegA,Pop RegB,Push RegA,Jump (Ind RegB),Const 3 RegA,Compute Add RegA PC RegA,Store RegA (Addr 1),Jump (Rel 36),Pop RegA,Store RegA (Addr 2),Const 4 RegA,Load (Addr 2) RegB,Compute Mul RegA RegB RegA,Store RegA (Addr 2),Load (Addr 3) RegA,Push RegA,Load (Addr 2) RegA,Push RegA,Load (Addr 1) RegA,Push RegA,Load (Addr 0) RegA,Push RegA,Const 6 RegA,Compute Add RegA PC RegA,Push RegA,Load (Addr 2) RegA,Push RegA,Load (Addr 0) RegA,Jump (Ind RegA),Pop RegA,Pop RegB,Store RegB (Addr 0),Pop RegB,Store RegB (Addr 1),Pop RegB,Store RegB (Addr 2),Pop RegB,Store RegB (Addr 3),Store RegA (Addr 3),Load (Addr 3) RegA,Pop RegB,Push RegA,Jump (Ind RegB),Load (Addr 2) RegA,Push RegA,Load (Addr 1) RegA,Push RegA,Load (Addr 0) RegA,Push RegA,Const 6 RegA,Compute Add RegA PC RegA,Push RegA,Const 3 RegA,Push RegA,Load (Addr 1) RegA,Jump (Ind RegA),Pop RegA,Pop RegB,Store RegB (Addr 0),Pop RegB,Store RegB (Addr 1),Pop RegB,Store RegB (Addr 2),Store RegA (Addr 2),EndProg]
-main = run 1 prog >> putChar '\n'

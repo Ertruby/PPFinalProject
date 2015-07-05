@@ -1,0 +1,8 @@
+program WhenFailTest:
+    btw, other options are: removing the expression, 'the stop.' or a keyword.
+    btw, this fails because the ':' is missing behind the do.
+    when x is smaller than or equal to 5 do
+        stop.
+    otherwise do:
+        stop.   
+    stop.

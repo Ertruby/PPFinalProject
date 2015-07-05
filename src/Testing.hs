@@ -12,13 +12,8 @@ import Data.Char
 import DataTypesEtc
 import TestOutcomes
 
--- gwn de ast printen en in de 'testOutCome.hs' poten als variabele
--- om de ast te krijgen gebruik die comment achter de if ipv de if statement
--- zo is t redelijk te doen, gwn 1 file waar alles in zit, dan 1 of 2 met een paar foutjes zoals een punt die mist.
--- VERWIJDER DEZE COMMENT !!
 
-testWrong = testSyntax "Input/DeclAssignTest.txt" testOWrong
-synTest1 = testSyntax "Input/DeclAssignTest.txt" testO1
+
         
 testSyntax :: FilePath -> AST -> IO()
 testSyntax input expected = do
@@ -28,11 +23,22 @@ testSyntax input expected = do
         let actual = parse0 contents
         let result = actual == expected
         
-        let trtrn = if result -- show actual
-                        then "no syntactical errors found\n"
-                        else "syntactical errors found\n"
-        putStr trtrn
+        -- k <- openFile "TestOutcomes.hs" AppendMode
+        -- hPrint k actual
+        -- hClose k
         
+        let trtrn = if result
+                        then "No syntactical errors found"
+                        else "No syntactical errors found but the AST's are not the same"
+        print trtrn
+        
+declAssignContext = testContext "Input/DeclAssignTest.txt" 
+whenWhileContext = testContext "Input/WhenWhileTest.txt" 
+taskContext = testContext "Input/TaskTest.txt" 
+fibContext = testContext "Input/fib.txt" 
+typeCheckFailContext = testContext "Input/Context/TypeCheckFail.txt" 
+
+testContext :: FilePath -> IO()
 testContext input = do
         h <- openFile input ReadMode
         contents <- hGetContents h
@@ -40,5 +46,37 @@ testContext input = do
         let trtrn = if testCheck ast 
                         then "no contextual errors found"
                         else "contextual errors found"
-        print trtrn
         check ast
+        print trtrn
+
+drawTree :: FilePath -> IO()
+drawTree input = do
+        h <- openFile input ReadMode
+        contents <- hGetContents h
+        let ast = parse0 contents
+        Parse.showAST ast
+        
+        
+-- ============================================================================================
+-- Syntax tests:
+
+assignSyntax = testSyntax "Input/Syntax/assignTest.txt" assignAST
+assignFailSyntax = testSyntax "Input/Syntax/assignFailTest.txt" assignFailAST
+commentSyntax = testSyntax "Input/Syntax/commentTest.txt" commentAST
+commentFailSyntax = testSyntax "Input/Syntax/commentFailTest.txt" commentFailAST
+declSyntax = testSyntax "Input/Syntax/DeclTest.txt" declAST
+declFailSyntax = testSyntax "Input/Syntax/DeclFailTest.txt" declFailAST
+exprSyntax = testSyntax "Input/Syntax/exprTest.txt" exprAST
+exprFailSyntax = testSyntax "Input/Syntax/exprFailTest.txt" exprFailAST
+funcCallSyntax = testSyntax "Input/Syntax/funcCallTest.txt" funcCallAST
+funcCallFailSyntax = testSyntax "Input/Syntax/funcCallFailTest.txt" funcCallFailAST
+incrSyntax = testSyntax "Input/Syntax/incrTest.txt" incrAST
+incrFailSyntax = testSyntax "Input/Syntax/incrFailTest.txt" incrFailAST
+programSyntax = testSyntax "Input/Syntax/programTest.txt" programAST
+programFailSyntax = testSyntax "Input/Syntax/programFailTest.txt" programFailAST
+taskSyntax = testSyntax "Input/Syntax/taskTest.txt" taskAST
+taskFailSyntax = testSyntax "Input/Syntax/taskFailTest.txt" taskFailAST
+whenSyntax = testSyntax "Input/Syntax/whenTest.txt" whenAST
+whenFailSyntax = testSyntax "Input/Syntax/whenFailTest.txt" whenFailAST
+whileSyntax = testSyntax "Input/Syntax/whileTest.txt" whileAST
+whileFailSyntax = testSyntax "Input/Syntax/whileFailTest.txt" whileFailAST

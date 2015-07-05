@@ -1,0 +1,4 @@
+program ExpressionFailTest: 
+    btw, expressions can't be at top level.
+    c times d.
+stop.

@@ -19,7 +19,7 @@ suppose [integer] d is [1,2,3].
 suppose [integer] e of length 5.
 d[2] is 34.
 e[4] is d[0] plus d[1].
-
+increment d[1].
 
 
 stop.

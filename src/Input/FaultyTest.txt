@@ -1,4 +1,6 @@
 program Test1:
-    btw, INPUT YOUR OWN FAULTY CODE HERE.
-    suppose integer i is 0
+    BTW, RUN ONLY ONE LINE AT THE TIME. COMMENT THE OTHERS AWAY BY PUTTING THE 'btw,' IN FRONT OF THE LINE
+    btw,suppose integer i is 0           missing ".".
+    btw,suppose inteer i is 0.           inteer is not a keyword and thus recognized as an idf.
+    when i > 8 do:                  btw, no body found.
 stop.

@@ -1,0 +1,7 @@
+program CommentTest: 
+    btw, this is a comment. suppose boolean x is true.
+    x is btw, this is a comment. false.
+    when y btw, this is a comment. do: 
+        y is false.
+        stop. btw, this is a comment.
+stop.

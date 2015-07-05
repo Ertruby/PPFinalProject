@@ -81,7 +81,7 @@ testSemanticSuite ast = ("Semantics Test", 1, walkTree ast [] ++ [EndProg], test
 testSemanticTest sysState@SysState{ .. }
         -- change the integer after !!! to the address you want to look at and the 
         -- integer after == to the expected output
-         | (localMem (sprs !! 0) !!! 1) == 13 = "Pass"
+         | (localMem (sprs !! 0) !!! 1) == 377 = "Pass"
          | otherwise             = "Fail"
         
         

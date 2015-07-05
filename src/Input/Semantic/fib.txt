@@ -10,5 +10,5 @@ program Fibonnaci:
             k is l plus r.
             stop.
         give k.
-    suppose integer g is Fib(6).
+    suppose integer g is Fib(13).
     stop.

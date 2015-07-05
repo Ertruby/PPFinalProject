@@ -2,7 +2,7 @@ module Main where
 
 import System.IO
 import System.FilePath
-import Parse (parse0, showAST)
+import Parse --(parse0, showAST)
 import Checker (check, countLines)
 import TreeWalker (writeToFile)
 import Data.List

@@ -1,7 +1,4 @@
 program Test4:
-    F(5, 5).
-    task F takes integer i and integer j and gives nothing after:
-        suppose integer ret is i plus 1.
-    stop.
-    suppose integer x.
+    suppose [integer] a is 5.
+    suppose [integer] b of length 6.
     stop.

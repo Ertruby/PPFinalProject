@@ -49,12 +49,13 @@ typeCheckScope nodes varList = case nodes of
             where
                 tup = makeTupleDecl varList (ASTNode Decl [tp,i])
         (t@(ASTNode Decl [tp, i, e]):ts)           
-            | fst tup == "ERR"                                                             -> (t,snd tup) : typeCheckScope ts varList
+            | fst tup == "ERR"                                                          -> (t,snd tup) : typeCheckScope ts varList
             | otherwise                                                                 -> typeCheckScope [ASTNode Assign [i,e]] newVarList ++ typeCheckScope ts newVarList 
             where 
                 tup = makeTupleDecl varList (ASTNode Decl [tp,i])
                 newVarList = tup : varList
         (t@(ASTNode Assign [t2@(ASTNode Idf [ASTLeaf var, i]), expr]):ts) 
+            | expectedErr                                                               -> (t, drop 3 expected) : typeCheckScope ts varList
             | iNotOke                                                                   -> (t,"index of array should be an integer at line ") : typeCheckScope ts varList
             | notArray                                                                  -> (t,show var ++ "is not an array") : typeCheckScope ts varList
             | elemType == actual                                                        -> typeCheckScope ts varList
@@ -207,7 +208,7 @@ makeTupleTaskH (ASTNode Arg [ASTNode Type [ASTLeaf t], _]:ts) (n,tp) = makeTuple
 makeTupleTaskH (ASTNode Type [ASTLeaf t]:ts) (n,tp) = makeTupleTaskH ts (n,t ++ tp)
 makeTupleTaskH (ASTNode Body kids:ts) (n,tp) = r
         where
-            actualR = getReturnType kids
+            actualR = if kids == [] then "TypeNothing" else getReturnType kids
             expectedR = TXT.unpack ((TXT.splitOn (TXT.pack ",") (TXT.pack tp))!!0)
             ok = actualR == expectedR
             r = do if ok then makeTupleTaskH ts (n,tp) else if isPrefixOf "ERR" actualR then ("ERR", drop 3 actualR) else ("ERR", "Task " ++ n ++ " should return a " ++ expectedR ++ ", but returns a " ++ actualR)

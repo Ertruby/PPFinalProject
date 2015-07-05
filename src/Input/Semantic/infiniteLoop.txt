@@ -1,0 +1,6 @@
+program InfiniteLoop:
+    suppose integer b.
+    while true do:
+        increment b.
+        stop.
+    stop.

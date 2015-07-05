@@ -1,0 +1,11 @@
+program DivisionByZero:
+    suppose [integer] k is [5,2,8,1,0,9].
+    suppose integer l is 6.
+    suppose [integer] b of length 5.
+    suppose integer i is 0.
+    while i is smaller than (l minus 1) do:
+        b[i] is k[i] divided by k[i plus 1].
+        increment i.
+        stop.
+   
+    stop.

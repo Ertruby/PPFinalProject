@@ -1,6 +1,0 @@
-{-# LANGUAGE RecordWildCards #-} 
-module Output.WhenWhileTest.txt where 
-import Sprockell.System
-prog:: [Instruction] 
-prog = [Const 1 RegA,Store RegA (Addr 0),Const 4 RegA,Store RegA (Addr 1),Const 4 RegA,Store RegA (Addr 2),Const 0 RegA,Store RegA (Addr 3),Compute Add PC Zero RegA,Push RegA,Load (Addr 0) RegA,Load (Addr 1) RegB,Load (Addr 2) RegC,Compute Equal RegB RegC RegB,Load (Addr 3) RegC,Const 20 RegD,Compute Lt RegC RegD RegC,Compute And RegB RegC RegB,Compute And RegA RegB RegA,Const 1 RegB,Compute Xor RegA RegB RegA,Const 8 RegB,Compute Add RegB PC RegB,Branch RegA (Ind RegB),Load (Addr 3) RegA,Const 1 RegB,Compute Add RegA RegB RegA,Store RegA (Addr 3),Pop RegA,Jump (Ind RegA),Pop RegA,Const 1 RegA,Store RegA (Addr 4),Load (Addr 4) RegA,Const 1 RegB,Compute Xor RegA RegB RegA,Const 5 RegB,Compute Add RegB PC RegB,Branch RegA (Ind RegB),Const 0 RegA,Store RegA (Addr 4),Jump (Rel 1),Const 0 RegA,Store RegA (Addr 5),Load (Addr 5) RegA,Const 5 RegB,Compute LtE RegA RegB RegA,Const 1 RegB,Compute Xor RegA RegB RegA,Const 7 RegB,Compute Add RegB PC RegB,Branch RegA (Ind RegB),Load (Addr 5) RegA,Const 5 RegB,Compute Add RegA RegB RegA,Store RegA (Addr 5),Jump (Rel 3),Const 2 RegA,Store RegA (Addr 5),EndProg]
-main = run 1 prog >> putChar '\n'

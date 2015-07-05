@@ -1,0 +1,28 @@
+program TypeContext: 
+    suppose boolean x is true.
+    suppose integer b is 5.
+    suppose [integer] k is [1,2,3].
+    suppose [boolean] m is [true,x,true].
+    
+    b is 30.
+    x is false.
+    k[0] is b minus 8.
+    
+    when 5 equals 7 do:
+        stop.
+    
+    while x or (b equals 30) do:
+        stop.
+    
+    task Test takes integer g and gives nothing after:
+        suppose integer k.
+        stop.
+    Test(0).
+    
+    task Test2 takes integer g, boolean l and integer o and gives integer after:
+        suppose integer k is g.
+        give k.
+    suppose integer d is Test2(9,true,5).
+
+
+    stop.

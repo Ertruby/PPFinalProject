@@ -11,12 +11,22 @@ program TypeContextFail:
     a is false.
     k[0] is true.
     
+    when 5 do:
+        stop.
+    
+    while 5 or 6 do:
+        stop.
+    
     task Test takes integer g and gives nothing after:
         suppose integer k.
         stop.
     suppose integer c is Test(0).
     Test(true).
-
+    
+    task Test2 takes integer g and gives integer after:
+        suppose integer k is g.
+        give k.
+    suppose boolean d is Test2(9).
 
 
     stop.

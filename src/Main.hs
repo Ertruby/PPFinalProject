@@ -18,8 +18,9 @@ compile input = do
         contents <- hGetContents h
         let ast = parse0 contents
         check ast
-        let fileNameP = if isSuffixOf ".txt" input
-                        then take ((length input)-4) (takeFileName input)
+        let fileNameH = takeFileName input
+        let fileNameP = if isSuffixOf ".txt" fileNameH
+                        then take ((length fileNameH)-4) fileNameH
                         else takeFileName input
         let fileName = [toUpper (head fileNameP)] ++ tail fileNameP
         outh <- openFile ("Output/" ++ fileName ++ ".hs") WriteMode

@@ -12,14 +12,6 @@ import qualified Data.Text as TXT
 parse0 :: String -> AST
 parse0 str = toAST $ parse grammar Program (tok str)
 
--- ==========================================================================================================
-
-
-
-
-
-
-
 -- =================================================================
 -- Parser generator
 --
@@ -151,6 +143,7 @@ toAST node = case node of
         (PNode TypeBool ts)             -> ASTLeaf (show TypeBool)
         (PNode TypeChar ts)             -> ASTLeaf (show TypeChar)
         (PNode TypeNothing ts)          -> ASTLeaf (show TypeNothing)
+        (PNode NotEqual ts)             -> ASTLeaf (show NotEqual)
         (PNode DividedBy ts)            -> ASTLeaf (show DividedBy)
         (PNode GreaterThan ts)          -> ASTLeaf (show GreaterThan)
         (PNode GreaterThanEq ts)        -> ASTLeaf (show GreaterThanEq)

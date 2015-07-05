@@ -45,6 +45,11 @@ data Reg = Zero                              -- Read only zero value
          | RegC
          | RegD
          | RegE
+         | RegF
+         | RegG
+         | RegH
+         | RegI
+         | RegJ
          deriving (Eq,Show,Read,Ord,Enum,Bounded,Ix)
 
 data MemAddr = Addr Address

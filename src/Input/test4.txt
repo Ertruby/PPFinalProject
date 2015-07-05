@@ -1,4 +1,4 @@
 program Test4:
-    suppose [integer] a is 5.
-    suppose [integer] b of length 6.
+    when 5 is not equal to 6 do:
+        stop.
     stop.

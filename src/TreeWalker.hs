@@ -212,7 +212,7 @@ getLength:: [AST] -> Int
 getLength [ASTNode Expr [ASTNode Array ls]] = length ls
 getLength [ASTNode Expr [ASTNode Value [ASTNode Integer [ASTLeaf n]]]] = read n :: Int
     
-regList = [RegA,RegB,RegC,RegD,RegE]
+regList = [RegA,RegB,RegC,RegD,RegE,RegF,RegG,RegH,RegI,RegJ]
 
 -- | The 'getNextReg' function takes the next register from the given list
 -- | It takes a list of registers and the current register
@@ -223,7 +223,7 @@ getNextReg (r:rs) t | r == t && length rs >= 1 = head rs
    
    
 ops = [Add,Sub,Mul,Div,Mod,Equal,NEq,Gt,GtE,Lt,LtE,And,Or,Xor,LShift,RShift]
-opsStr = ["plus", "minus", "times", "DividedBy", "modulo", "equals", "notEquals", "GreaterThan",
+opsStr = ["plus", "minus", "times", "DividedBy", "modulo", "equals", "NotEqual", "GreaterThan",
         "GreaterThanEq", "SmallerThan", "SmallerThanEq", "and", "or", "Xor", "LShift", "RShift"]
         
 -- | The 'getOp' function returns the SPRIL operator associated with the given string

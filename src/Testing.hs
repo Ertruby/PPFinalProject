@@ -36,7 +36,8 @@ declAssignContext = testContext "Input/DeclAssignTest.txt"
 whenWhileContext = testContext "Input/WhenWhileTest.txt" 
 taskContext = testContext "Input/TaskTest.txt" 
 fibContext = testContext "Input/fib.txt" 
-typeCheckFailContext = testContext "Input/Context/TypeCheckFail.txt" 
+idfContext = testContext "Input/Context/IdfContext.txt" 
+idfContextFail = testContext "Input/Context/IdfContextFail.txt" 
 
 testContext :: FilePath -> IO()
 testContext input = do

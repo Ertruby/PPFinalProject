@@ -1,0 +1,22 @@
+program TypeContextFail: 
+    suppose boolean x is 3.
+    suppose integer b is true.
+    suppose [integer] k is 5.
+    suppose [boolean] m is [1,2,3].
+    
+    suppose boolean y is true.
+    suppose integer a is 43.
+    suppose [integer] n is [1,2,3].
+    y is 5.
+    a is false.
+    k[0] is true.
+    
+    task Test takes integer g and gives nothing after:
+        suppose integer k.
+        stop.
+    suppose integer c is Test(0).
+    Test(true).
+
+
+
+    stop.

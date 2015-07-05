@@ -97,6 +97,10 @@ typeCheckScope nodes varList = case nodes of
             | isPrefixOf "ERR" (getType varList t2)                                     -> (t,drop 3 (getType varList t2)) : typeCheckScope ts varList
             | getType varList t2 /= "TypeInt"                                           -> (t,"increment takes an integer variable") : typeCheckScope ts varList
             | otherwise                                                                 -> typeCheckScope ts varList
+        (t@(ASTNode FuncCall (ASTNode FuncName [ASTLeaf name]:es)):ts)
+            | isPrefixOf "ERR" (getAndCheckExpr varList t)                              -> (t,drop 3 (getAndCheckExpr varList t)) : typeCheckScope ts varList
+            | getAndCheckExpr varList t == "TypeNothing"                                -> typeCheckScope ts varList
+            | otherwise                                                                 -> (t,getAndCheckExpr varList t ++ "Task " ++ name ++ " returns something so it has to be assigned to a variable") : typeCheckScope ts varList
         (t:ts)                                                                          -> typeCheckScope ts varList
         
 -- type and correctness checking of expression sub trees

@@ -47,6 +47,8 @@ drawTree input = do
         contents <- hGetContents h
         let ast = parse0 contents
         Parse.showAST ast
+        
+drawTreeFromAST ast = Parse.showAST ast
 
 
         

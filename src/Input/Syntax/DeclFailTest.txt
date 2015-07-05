@@ -1,0 +1,4 @@
+program DeclFailTest: 
+    btw, the '.' is missing at the end of the line.
+    suppose boolean x is true
+stop.

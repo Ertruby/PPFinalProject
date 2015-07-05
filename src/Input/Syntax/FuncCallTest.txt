@@ -1,0 +1,5 @@
+program FuncCallTest:
+    g is Fib(4).
+    Func(4,5,true,false).
+    F(g).
+    stop.

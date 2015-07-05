@@ -1,0 +1,3 @@
+program AssignFailTest:
+    k is 5 4. btw, dit zijn nog andere opties: (5 is 4.), (a 5.) 
+    stop.

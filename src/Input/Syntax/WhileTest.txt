@@ -1,0 +1,5 @@
+program WhileTest:
+    while h is smaller than 20 do:
+        increment c. 
+        stop. 
+    stop.

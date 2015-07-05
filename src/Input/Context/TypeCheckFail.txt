@@ -1,0 +1,17 @@
+program DeclAssignTest: 
+suppose boolean x is 3.
+suppose integer b is true.
+a is 5.
+
+suppose [integer] k of length 5.
+suppose boolean c is true.
+k[c] is 8.
+
+task Test takes integer c and gives nothing after:
+    suppose integer k.
+    stop.
+Test(true).
+suppose integer c is 4.
+
+
+stop.

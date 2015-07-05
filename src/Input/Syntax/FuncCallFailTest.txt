@@ -1,0 +1,4 @@
+program FuncCallTest:
+    btw, the function name doesn't start with upper case character.
+    g is fib(4).
+    stop.

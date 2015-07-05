@@ -1,0 +1,6 @@
+program TaskFailTest:
+    btw, the identifier name is missing.
+    task H takes integer and gives integer after:
+        suppose integer n is i plus 1.
+        give n.
+    stop.

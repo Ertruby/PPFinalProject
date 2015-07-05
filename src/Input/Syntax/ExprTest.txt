@@ -1,0 +1,18 @@
+program ExpressionTest: 
+    b is c times b.
+    a is b plus c.
+    a is b minus c.
+    a is b divided by c.
+    x is true and y.        
+    x is x or y.            
+    x is a equals b.        
+    x is a is greater than b.   
+    x is a is greater than or equal to b.   
+    x is a is smaller than b.           
+    x is a is smaller than or equal to b.
+    c is (3 minus 1) times (7 plus 8).
+    x is (a divided by 3) equals (b plus 8).
+    x is ((d[a] divided by 3) equals (b plus d[0])) and y.
+    e[4] is d[0] plus d[1].
+    k is Fib(4).
+stop.

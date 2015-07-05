@@ -1,0 +1,7 @@
+program WhileFailTest:
+    btw, other options are: removing one of the following: while, do:, stop.
+    btw, this fails because no expression was found.
+    while do:
+        increment c. 
+        stop. 
+    stop.

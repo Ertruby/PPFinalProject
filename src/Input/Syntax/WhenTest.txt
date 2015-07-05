@@ -1,0 +1,10 @@
+program WhenTest:
+    when y do:
+        stop.
+ 
+    when x is smaller than or equal to 5 do:
+        stop.
+    otherwise do:
+        stop. 
+        
+    stop.

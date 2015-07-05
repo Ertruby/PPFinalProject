@@ -1,0 +1,11 @@
+program AssignTest: 
+    b is 5.
+    c is 43.
+    d is false.
+    e is true.
+    f is b.
+    a is b plus c.
+    d[2] is 34.
+    d[b] is 3.
+    e[4] is d[0] plus d[1].
+stop.

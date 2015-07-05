@@ -1,0 +1,3 @@
+program CommentFailTest:
+    abtw, this is a comment. is 5. btw, this fails because btw isn't found and thus nothing gets ignored.
+    stop.

@@ -1,0 +1,4 @@
+program IncrFailTest:
+    btw, only identifiers can be incremented.
+    increment 5.
+    stop.

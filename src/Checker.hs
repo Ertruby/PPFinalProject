@@ -152,7 +152,9 @@ getAndCheckExpr varList node = case node of
         (ASTNode Expr [x])                                          -> getAndCheckExpr varList x
         (ASTNode Expr [left, ASTNode Op [ASTLeaf op], right]) 
             | op == "equals" && rightT == leftT                     -> "TypeBool"
+            | op == "NotEqual" && rightT == leftT                   -> "TypeBool"
             | op == "equals"                                        -> "ERRoperator 'equals' takes an expression of the same type on each side"
+            | op == "NotEqual"                                      -> "ERRoperator 'is not equal to' takes an expression of the same type on each side"
             | isBoolOp && leftT == rightT && leftT == "TypeBool"    -> "TypeBool"
             | isIntOp && leftT == rightT && leftT == "TypeInt"      -> "TypeInt"
             | isBoolOp                                              -> ("ERR" ++ (show op) ++ " takes a boolean on each side.")

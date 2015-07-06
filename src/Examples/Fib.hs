@@ -64,14 +64,14 @@ prog = [Const 3 RegA
         ,Push RegA                          -- push known addresses
         ,Const 8 RegA
         ,Compute Add RegA PC RegA
-        ,Push RegA
-        ,Load (Addr 1) RegA
-        ,Const 2 RegB
-        ,Compute Sub RegA RegB RegA
-        ,Push RegA
+        ,Push RegA                          -- push return address line 74
+        ,Load (Addr 1) RegA                 -- RegA <- n
+        ,Const 2 RegB                       -- RegB <- 2
+        ,Compute Sub RegA RegB RegA         -- RegA <- n-2
+        ,Push RegA                          -- push argument n-2
         ,Load (Addr 0) RegA
-        ,Jump (Ind RegA)
-        ,Pop RegA
+        ,Jump (Ind RegA)                    -- jump to task Fib
+        ,Pop RegA                           -- pop return value
         ,Pop RegB
         ,Store RegB (Addr 0)
         ,Pop RegB
@@ -81,16 +81,16 @@ prog = [Const 3 RegA
         ,Pop RegB
         ,Store RegB (Addr 3)
         ,Pop RegB
-        ,Store RegB (Addr 4)
-        ,Store RegA (Addr 4)
-        ,Load (Addr 3) RegA
-        ,Load (Addr 4) RegB
-        ,Compute Add RegA RegB RegA
-        ,Store RegA (Addr 2)
-        ,Load (Addr 2) RegA
-        ,Pop RegB
-        ,Push RegA
-        ,Jump (Ind RegB)
+        ,Store RegB (Addr 4)                -- pop and restore known addresses
+        ,Store RegA (Addr 4)                -- store return value
+        ,Load (Addr 3) RegA                 -- RegA <-- l
+        ,Load (Addr 4) RegB                 -- RegB <-- r
+        ,Compute Add RegA RegB RegA         -- l+r
+        ,Store RegA (Addr 2)                -- k = l+r
+        ,Load (Addr 2) RegA                 -- RegA <-- k
+        ,Pop RegB                           -- RegB <-- return address
+        ,Push RegA                          -- push return value k
+        ,Jump (Ind RegB)                    -- jump to return address
         ,Load (Addr 1) RegA                 -- AFTER task Fib
         ,Push RegA
         ,Load (Addr 0) RegA
